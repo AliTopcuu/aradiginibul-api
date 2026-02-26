@@ -1,44 +1,51 @@
-
-from fastapi import FastAPI
-import models
-from database import engine
+from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
+from sqlalchemy.orm import Session
+import models, database # Kendi dosya yapınıza göre kontrol edin
 
-from routers.auth_router import router as auth_router
-from routers.products_router import router as products_router
-from routers.users_router import router as users_router
-from routers.orders_router import router as orders_router
-from routers.reviews_router import router as reviews_router
-from routers.analytics_router import router as analytics_router
+app = FastAPI(title="AradığınıBul API")
 
-models.Base.metadata.create_all(bind=engine)
-
-app = FastAPI(
-    title="AradığınıBul API - AUT Market Edition",
-    description="Toptan ve Perakende e-ticaret altyapısı, B2B sipariş motoru.",
-    version="2.0.0"
-)
-
+# 🛡️ CORS Ayarları - Her yerden erişime izin ver
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Bu satırı "*" yaparak tüm dünyadan gelen isteklere kapıyı açıyoruz
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.include_router(auth_router)
-app.include_router(products_router)
-app.include_router(users_router)
-app.include_router(orders_router)
-app.include_router(reviews_router)
-app.include_router(analytics_router)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+SECRET_KEY = "YAZDIGIN_SECRET_KEY" 
+ALGORITHM = "HS256"
 
-@app.get("/")
-def read_root():
+@app.get("/auth/me")
+async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(database.get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Kimlik doğrulanamadı",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
+    # PostgreSQL'den kullanıcıyı bul
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if user is None:
+        raise credentials_exception
+
     return {
-        "mesaj": "AradığınıBul Motoru Çalışıyor! 🚀",
-        "durum": "Sistemler Çevrimiçi",
-       
-        "moduller": ["Katalog", "B2B İskonto", "İstek Listesi", "Sipariş İşlem Motoru", "Değerlendirme Sistemi", "Yapay Zeka Destekli Stok Analitiği"]
+        "id": user.id,
+        "email": user.email,
+        "first_name": user.first_name, # Ali
+        "last_name": user.last_name,   # Topçu
+        "phone": user.phone
     }
+
+# Diğer routerlar (auth_router, products_router vb.) buraya eklenebilir
