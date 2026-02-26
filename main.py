@@ -14,7 +14,7 @@ from routers.analytics_router import router as analytics_router
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="AradığınıBul API - Metro Market Edition",
+    title="AradığınıBul API - AUT Market Edition",
     description="Toptan ve Perakende e-ticaret altyapısı, B2B sipariş motoru.",
     version="2.0.0"
 )
