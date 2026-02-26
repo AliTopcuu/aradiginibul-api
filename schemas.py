@@ -84,7 +84,7 @@ class OrderResponse(BaseModel):
     class Config:
         from_attributes = True
 
-        class OrderItemCreate(BaseModel):
+class OrderItemCreate(BaseModel):
     product_id: int
     quantity: int
 
