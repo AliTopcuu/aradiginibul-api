@@ -30,19 +30,19 @@ export default function DashboardPage() {
       return;
     }
 
-    // Backend'den kullanıcı bilgilerini çek
+    // PostgreSQL üzerindeki profil bilgilerini çek
     api.get('/auth/me')
       .then((res) => {
         setUser(res.data);
         setLoading(false);
       })
       .catch(() => {
+        // Oturum geçersizse temizle ve yönlendir
         localStorage.removeItem('token');
         router.push('/login');
       });
   }, [router]);
 
-  // Mouse hareketini takip et
   const handleMouseMove = (e: React.MouseEvent) => {
     setMousePos({ x: e.clientX, y: e.clientY });
   };
@@ -70,7 +70,7 @@ export default function DashboardPage() {
       <div 
         className="pointer-events-none absolute inset-0 z-0 transition-opacity duration-500"
         style={{
-          background: `radial-gradient(800px circle at ${mousePos.x}px ${mousePos.y}px, rgba(37, 99, 235, 0.08), transparent 80%)`
+          background: `radial-gradient(800px circle at ${mousePos.x}px ${mousePos.y}px, rgba(37, 99, 235, 0.1), transparent 80%)`
         }}
       />
 
@@ -140,7 +140,6 @@ export default function DashboardPage() {
 
         {/* DASHBOARD İÇERİĞİ */}
         <div className="p-10 max-w-7xl mx-auto space-y-10">
-          {/* Karşılama Kartı */}
           <div className="bg-gradient-to-br from-blue-600/20 to-transparent backdrop-blur-3xl rounded-[3rem] border border-blue-500/20 p-16 shadow-2xl relative overflow-hidden group">
             <div className="absolute -top-24 -right-24 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl group-hover:bg-blue-600/20 transition-all duration-700"></div>
             <div className="relative z-10">
@@ -156,18 +155,9 @@ export default function DashboardPage() {
               <p className="text-xl text-slate-400 font-medium max-w-2xl leading-relaxed">
                 PostgreSQL üzerindeki işletme verileriniz ve stok bilgileriniz anlık olarak senkronize edildi. Satış paneliniz üzerinden yeni siparişlerinizi yönetebilirsiniz.
               </p>
-              <div className="mt-12 flex flex-wrap gap-4">
-                <button className="bg-white text-slate-950 px-10 py-5 rounded-[1.5rem] font-black hover:bg-blue-500 hover:text-white transition-all shadow-xl shadow-white/5 active:scale-95">
-                  Ürün Kataloğunu Aç
-                </button>
-                <button className="bg-white/5 text-white border border-white/10 px-10 py-5 rounded-[1.5rem] font-black hover:bg-white/10 transition-all backdrop-blur-md">
-                  Sipariş Geçmişi
-                </button>
-              </div>
             </div>
           </div>
 
-          {/* İstatistikler */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <StatCard title="Günlük Satış" value="₺42.850" trend="+12%" />
             <StatCard title="Aktif Stok" value="1.240 Adet" trend="Stabil" />
@@ -179,7 +169,6 @@ export default function DashboardPage() {
   );
 }
 
-// Yardımcı Bileşenler
 function SidebarItem({ icon, label, active = false }: any) {
   return (
     <button className={`flex items-center gap-4 px-6 py-4 rounded-[1.5rem] font-bold text-sm w-full transition-all group ${
@@ -195,7 +184,7 @@ function SidebarItem({ icon, label, active = false }: any) {
 
 function StatCard({ title, value, trend }: any) {
   return (
-    <div className="bg-white/5 backdrop-blur-xl p-10 rounded-[2.5rem] border border-white/5 hover:bg-white/10 hover:border-white/10 transition-all group relative overflow-hidden">
+    <div className="bg-white/5 backdrop-blur-xl p-10 rounded-[2.5rem] border border-white/5 hover:bg-white/10 transition-all group relative overflow-hidden">
       <div className="absolute top-0 right-0 p-6 text-blue-500/20 group-hover:text-blue-500/40 transition-colors">
         <TrendingUp size={48} />
       </div>
