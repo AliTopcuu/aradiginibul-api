@@ -1,21 +1,27 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 import models, database, auth
 
-app = FastAPI()
+app = FastAPI(title="AradığınıBul B2B API")
 
-# 🛡️ CORS Çözümü: GitHub Dev ortamından gelen isteklere izin ver
+# 🛡️ CORS Ayarları
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Railway ve GitHub Dev uyumu için "*" kullanıyoruz
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ... (SECRET_KEY ve oauth2_scheme tanımları)
+# 🔑 Sabitler ve Güvenlik Tanımları
+SECRET_KEY = "Sizin_Sabit_Secret_Keyiniz" 
+ALGORITHM = "HS256"
+
+# HATAYI ÇÖZEN SATIR BURASI: oauth2_scheme mutlaka tanımlanmalı
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 @app.post("/auth/register")
 async def register(user_in: dict, db: Session = Depends(database.get_db)):
@@ -23,26 +29,24 @@ async def register(user_in: dict, db: Session = Depends(database.get_db)):
     if db_user:
         raise HTTPException(status_code=400, detail="Bu e-posta zaten kayıtlı")
     
-    # HATA ÇÖZÜMÜ: Logdaki TypeError 'password' hatası için models.py'deki alan adını kontrol et
-    # Eğer modelinde hashed_password ise sol tarafı ona göre güncelle
+    # Şifre alanını modellerinize göre (hashed_password) kaydedin
     new_user = models.User(
         email=user_in["email"],
-        hashed_password=auth.get_password_hash(user_in["password"]), 
+        hashed_password=auth.get_password_hash(user_in["password"]),
         first_name=user_in.get("first_name"),
-        last_name=user_in.get("last_name")
+        last_name=user_in.get("last_name"),
+        phone=user_in.get("phone")
     )
     db.add(new_user)
     db.commit()
-    return {"message": "Kayıt başarılı"}
+    db.refresh(new_user)
+    return {"message": "Kayıt başarıyla tamamlandı"}
 
 @app.post("/auth/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
-    # Frontend'den gelen 'username' alanını email ile eşleştir
     user = db.query(models.User).filter(models.User.email == form_data.username).first()
     if not user or not auth.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="E-posta veya şifre hatalı")
-
-
     
     access_token = jwt.encode({"sub": user.email}, SECRET_KEY, algorithm=ALGORITHM)
     return {"access_token": access_token, "token_type": "bearer"}
@@ -54,6 +58,7 @@ async def get_me(token: str = Depends(oauth2_scheme), db: Session = Depends(data
         email: str = payload.get("sub")
         user = db.query(models.User).filter(models.User.email == email).first()
         if not user: raise HTTPException(status_code=404)
+        
         return {
             "first_name": user.first_name, 
             "last_name": user.last_name, 
