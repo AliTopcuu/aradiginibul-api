@@ -9,7 +9,7 @@ app = FastAPI(title="AradığınıBul B2B API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"], # Tüm dış kaynaklara izin ver
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -27,14 +27,16 @@ async def register(user_in: dict, db: Session = Depends(database.get_db)):
     
     new_user = models.User(
         email=user_in["email"],
-        password=auth.get_password_hash(user_in["password"]),
+        # Modelindeki gerçek alan adı hashed_password ise ona eşitle:
+        hashed_password=auth.get_password_hash(user_in["password"]), 
         first_name=user_in.get("first_name"),
         last_name=user_in.get("last_name"),
         phone=user_in.get("phone")
     )
     db.add(new_user)
     db.commit()
-    return {"message": "Kayıt başarıyla tamamlandı"}
+    db.refresh(new_user)
+    return {"message": "Kayıt başarılı"}
 
 @app.post("/auth/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):

@@ -15,23 +15,24 @@ export default function LoginPage() {
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const formData = new FormData();
-      formData.append('username', email);
-      formData.append('password', password);
+  e.preventDefault();
+  setLoading(true);
+  try {
+    const formData = new FormData();
+    formData.append('username', email); // Backend 'username' bekler
+    formData.append('password', password);
 
-      const response = await api.post('/auth/login', formData);
-      localStorage.setItem('token', response.data.access_token);
-      router.push('/');
-    } catch (error: any) {
-      // image_89b005'deki nesne hatasını string mesajla çözüyoruz
-      alert(error.response?.data?.detail || "Giriş başarısız! Bilgilerinizi kontrol edin.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    const res = await api.post('/auth/login', formData);
+    localStorage.setItem('token', res.data.access_token);
+    router.push('/');
+  } catch (err: any) {
+    // image_89b005'deki hatayı çözmek için detail alanını oku
+    const message = err.response?.data?.detail;
+    alert(typeof message === 'string' ? message : "Giriş başarısız, verileri kontrol edin.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div 
