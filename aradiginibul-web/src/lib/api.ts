@@ -1,16 +1,11 @@
 import axios from 'axios';
 
+// Railway linkinin sonuna '/' eklemediğinden emin ol
 const api = axios.create({
-  baseURL: "https://aradiginibul-api-production.up.railway.app", // Senin Railway adresin
-});
-
-// Her isteğe otomatik olarak token ekleyen bir koruma (İlerisi için hazır kalsın)
-api.interceptors.request.use((config) => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
+  baseURL: "https://aradiginibul-api-production.up.railway.app", 
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
 export default api;

@@ -28,17 +28,24 @@ export default function RegisterPage() {
       await api.post('/auth/register', {
         email: formData.email,
         password: formData.password,
-        first_name: formData.firstName, // Backend'deki 'first_name' ile eşleşir
-        last_name: formData.lastName,   // Backend'deki 'last_name' ile eşleşir
+        first_name: formData.firstName, // Backend 'first_name' bekliyor
+        last_name: formData.lastName,   // Backend 'last_name' bekliyor
         phone: formData.phone           // Telefon bilgisi
       });
       
-      alert("Hesabınız başarıyla oluşturuldu! Şimdi giriş yapabilirsiniz.");
-      router.push('/login'); // Kayıt sonrası giriş ekranına yönlendir
+      alert("Kayıt başarılı! Giriş sayfasına yönlendiriliyorsunuz.");
+      router.push('/login');
     } catch (error: any) {
-      console.error("Kayıt Hatası Detayı:", error.response?.data);
-      const errorMsg = error.response?.data?.detail || "Kayıt sırasında bir hata oluştu. Bilgileri kontrol edin.";
-      alert(errorMsg);
+      console.error("Hata objesi:", error);
+      const detail = error.response?.data?.detail;
+      
+      if (Array.isArray(detail)) {
+        // Pydantic doğrulama hataları (Örn: Geçersiz e-posta formatı)
+        alert(`Hata: ${detail[0].msg}`);
+      } else {
+        // Backend'den gelen özel hata mesajı (Örn: "Email already registered")
+        alert(detail || "Kayıt sırasında bir hata oluştu. Bilgileri kontrol edin.");
+      }
     } finally {
       setLoading(false);
     }
@@ -74,7 +81,7 @@ export default function RegisterPage() {
                 type="text" required
                 value={formData.lastName}
                 onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                placeholder="Topcu"
+                placeholder="Topçu"
                 className="w-full px-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm text-slate-900" 
               />
             </div>
@@ -97,7 +104,7 @@ export default function RegisterPage() {
 
           {/* Telefon */}
           <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">TELEFON NUMARASI</label>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">TELEFON</label>
             <div className="relative">
               <Phone className="absolute left-4 top-4 text-slate-300 w-4 h-4" />
               <input 
@@ -112,7 +119,7 @@ export default function RegisterPage() {
 
           {/* Şifre */}
           <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">ŞİFRE BELİRLEYİN</label>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">ŞİFRE</label>
             <div className="relative">
               <Lock className="absolute left-4 top-4 text-slate-300 w-4 h-4" />
               <input 
