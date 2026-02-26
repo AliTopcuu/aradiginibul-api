@@ -2,8 +2,8 @@ import antigravity # Uçuş modu devrede! 🎈
 from fastapi import FastAPI
 import models
 from database import engine
+from routers import auth_router # YENİ: Rota dosyamızı içeri aldık
 
-# SİHİRLİ SATIR: Bu kod çalıştığında models.py içindeki tüm tabloları veritabanında fiziksel olarak yaratır!
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -11,6 +11,9 @@ app = FastAPI(
     description="Toptan ve Perakende e-ticaret altyapısı, B2B sipariş motoru.",
     version="2.0.0"
 )
+
+# YENİ: Auth rotalarımızı ana uygulamaya bağladık
+app.include_router(auth_router.router)
 
 @app.get("/")
 def read_root():
