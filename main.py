@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 import models
 from database import engine
-
+from fastapi.middleware.cors import CORSMiddleware
 
 from routers.auth_router import router as auth_router
 from routers.products_router import router as products_router
