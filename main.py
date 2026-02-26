@@ -4,7 +4,12 @@ import models
 from database import engine
 
 
-from routers import auth_router, products_router, users_router, orders_router, reviews_router, analytics_router
+from routers.auth_router import router as auth_router
+from routers.products_router import router as products_router
+from routers.users_router import router as users_router
+from routers.orders_router import router as orders_router
+from routers.reviews_router import router as reviews_router
+from routers.analytics_router import router as analytics_router
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -14,13 +19,12 @@ app = FastAPI(
     version="2.0.0"
 )
 
-app.include_router(auth_router.router)
-app.include_router(products_router.router) 
-app.include_router(users_router.router)
-app.include_router(reviews_router.router)
-app.include_router(orders_router.router)
-
-app.include_router(analytics_router.router)
+app.include_router(auth_router)
+app.include_router(products_router)
+app.include_router(users_router)
+app.include_router(orders_router)
+app.include_router(reviews_router)
+app.include_router(analytics_router)
 
 @app.get("/")
 def read_root():
