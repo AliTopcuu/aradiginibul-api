@@ -84,6 +84,13 @@ class OrderResponse(BaseModel):
     class Config:
         from_attributes = True
 
+        class OrderItemCreate(BaseModel):
+    product_id: int
+    quantity: int
+
+class OrderCreate(BaseModel):
+    items: List[OrderItemCreate] # Müşteri sadece ürün ID'si ve Miktar yollayacak
+
 # --- 7. KULLANICI (USER) ŞEMALARI ---
 class UserBase(BaseModel):
     email: str
