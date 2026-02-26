@@ -63,7 +63,7 @@ export default function DashboardPage() {
           <div className="bg-white/10 p-2 rounded-xl border border-white/20 shadow-lg">
             <Briefcase className="text-amber-500 w-5 h-5" />
           </div>
-          <span className="font-black text-xl tracking-tighter uppercase italic text-white">AradığınıBul</span>
+          <span className="font-black text-xl tracking-tighter uppercase italic text-white">Aradığını Bul</span>
         </div>
         
         <nav className="space-y-1.5 flex-1">
@@ -87,7 +87,7 @@ export default function DashboardPage() {
         <header className="bg-black/20 backdrop-blur-md border-b border-white/5 h-20 flex items-center justify-between px-10 sticky top-0 z-30">
           <div className="flex items-center gap-2">
             <ShieldCheck className="text-amber-600 w-4 h-4 opacity-70" />
-            <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.2em]">B2B Cloud Gateway</span>
+            <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.2em]">Satış Uygulaması AUT</span>
           </div>
           
           <div className="flex items-center gap-6">
@@ -96,7 +96,7 @@ export default function DashboardPage() {
                 <p className="text-sm font-black text-white leading-none">
                   {user?.first_name} {user?.last_name}
                 </p>
-                <p className="text-[10px] text-amber-600/80 font-black uppercase mt-1 tracking-widest">VIP Partner</p>
+                <p className="text-[10px] text-amber-600/80 font-black uppercase mt-1 tracking-widest">Bayi Üyesi</p>
               </div>
               <div className="w-10 h-10 bg-white/10 border border-white/20 rounded-xl flex items-center justify-center text-amber-500 font-black text-sm shadow-xl">
                 {getInitials()}
@@ -115,7 +115,7 @@ export default function DashboardPage() {
               </span> 👋
             </h1>
             <p className="text-lg text-white/50 font-medium max-w-2xl leading-relaxed italic">
-              PostgreSQL üzerindeki tüm işletme ve bayi verileriniz bu yeni, karartılmış arayüzde güvenle senkronize edildi.
+              Güvenle çok al az öde mekanizması ile şirketinizin değerini arttırın.
             </p>
           </div>
 
