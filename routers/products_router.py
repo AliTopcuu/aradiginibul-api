@@ -34,3 +34,23 @@ def get_product(id: int, db: Session = Depends(get_db)):
     if not product:
         raise HTTPException(status_code=404, detail="Aradığınız ürün bulunamadı.")
     return product
+    
+
+
+    @router.post("/{id}/discount-rules", response_model=schemas.DiscountRuleResponse, status_code=status.HTTP_201_CREATED)
+def add_discount_rule(
+    id: int, 
+    rule: schemas.DiscountRuleCreate, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(auth.get_admin_user)
+):
+    product = db.query(models.Product).filter(models.Product.id == id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="İndirim kuralı eklenecek ürün bulunamadı.")
+    
+    # Yeni kuralı yarat ve ürüne bağla (product_id = id)
+    new_rule = models.DiscountRule(**rule.model_dump(), product_id=id)
+    db.add(new_rule)
+    db.commit()
+    db.refresh(new_rule)
+    return new_rule
