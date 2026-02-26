@@ -1,8 +1,8 @@
-import antigravity # Uçuş modu devrede! 🎈
+import antigravity
 from fastapi import FastAPI
 import models
 from database import engine
-from routers import auth_router # YENİ: Rota dosyamızı içeri aldık
+from routers import auth_router, products_router # YENİ: products_router eklendi
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -12,8 +12,8 @@ app = FastAPI(
     version="2.0.0"
 )
 
-# YENİ: Auth rotalarımızı ana uygulamaya bağladık
 app.include_router(auth_router.router)
+app.include_router(products_router.router) # YENİ: Ürünler API'si ana motora bağlandı
 
 @app.get("/")
 def read_root():
