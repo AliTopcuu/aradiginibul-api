@@ -18,7 +18,7 @@ export default function LoginPage() {
     setLoading(true);
     
     try {
-      // Backend OAuth2 Password request form beklediği için FormData kullanıyoruz
+      // Backend OAuth2 Password request form yapısı
       const formData = new FormData();
       formData.append('username', email);
       formData.append('password', password);
@@ -30,10 +30,10 @@ export default function LoginPage() {
       // Token'ı yerel depolamaya kaydet
       localStorage.setItem('token', response.data.access_token);
       
-      // Giriş başarılıysa ana sayfaya yönlendir
+      // 🚀 Kritik: Giriş sonrası ana sayfaya yönlendir
       router.push('/');
     } catch (error: any) {
-      // Hata mesajını kullanıcıya göster
+      // image_8b62f7'de görülen hata mesajı yönetimi
       const errorMsg = error.response?.data?.detail || "Giriş başarısız! Bilgilerinizi kontrol edin.";
       alert(errorMsg);
     } finally {
@@ -53,7 +53,6 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
-          {/* E-Posta Alanı */}
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">E-POSTA</label>
             <div className="relative">
@@ -69,7 +68,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Şifre Alanı */}
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">ŞİFRE</label>
             <div className="relative">
@@ -92,16 +90,11 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Giriş Butonu */}
           <button 
             disabled={loading}
-            className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-blue-600 transition-all shadow-xl shadow-slate-200 disabled:bg-slate-300 disabled:shadow-none"
+            className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-blue-600 transition-all shadow-xl shadow-slate-200 disabled:bg-slate-300"
           >
-            {loading ? (
-              <Loader2 className="animate-spin w-5 h-5" />
-            ) : (
-              <>Giriş Yap <ArrowRight size={20} /></>
-            )}
+            {loading ? <Loader2 className="animate-spin w-5 h-5" /> : <>Giriş Yap <ArrowRight size={20} /></>}
           </button>
         </form>
 
