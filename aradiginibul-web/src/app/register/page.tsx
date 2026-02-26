@@ -24,7 +24,7 @@ export default function RegisterPage() {
     setLoading(true);
     
     try {
-      // Backend şemasına tam uyumlu gönderim
+      // 🔑 PostgreSQL ve FastAPI şemasına tam uyumlu gönderim
       await api.post('/auth/register', {
         email: formData.email,
         password: formData.password,
@@ -36,13 +36,13 @@ export default function RegisterPage() {
       alert("Kayıt başarılı! Giriş sayfasına yönlendiriliyorsunuz.");
       router.push('/login');
     } catch (error: any) {
-      console.error("Hata Detayı:", error);
+      console.error("Detaylı Hata:", error);
       
       if (error.message === "Network Error") {
-        alert("API Bağlantı Hatası: Backend sunucusuna ulaşılamıyor. Lütfen api.ts dosyasındaki URL'yi kontrol edin.");
+        alert("API Bağlantı Hatası: Backend sunucusuna ulaşılamıyor. Railway servisinin açık olduğundan emin olun.");
       } else {
         const detail = error.response?.data?.detail;
-        alert(detail || "Kayıt sırasında bir hata oluştu.");
+        alert(detail || "Kayıt sırasında bir hata oluştu. Bilgileri kontrol edin.");
       }
     } finally {
       setLoading(false);
@@ -65,46 +65,46 @@ export default function RegisterPage() {
               type="text" placeholder="İsim" required
               value={formData.firstName}
               onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm text-slate-900" 
+              className="w-full px-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm" 
             />
             <input 
               type="text" placeholder="Soyisim" required
               value={formData.lastName}
               onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm text-slate-900" 
+              className="w-full px-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm" 
             />
           </div>
 
           <div className="relative">
-            <Mail className="absolute left-4 top-3.5 text-slate-300 w-4 h-4" />
+            <Mail className="absolute left-4 top-4 text-slate-300 w-4 h-4" />
             <input 
               type="email" placeholder="E-posta" required
               value={formData.email}
               onChange={(e) => setFormData({...formData, email: e.target.value})}
-              className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm text-slate-900" 
+              className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm" 
             />
           </div>
 
           <div className="relative">
-            <Phone className="absolute left-4 top-3.5 text-slate-300 w-4 h-4" />
+            <Phone className="absolute left-4 top-4 text-slate-300 w-4 h-4" />
             <input 
-              type="tel" placeholder="Telefon (Örn: 0538...)" required
+              type="tel" placeholder="Telefon (05xx...)" required
               value={formData.phone}
               onChange={(e) => setFormData({...formData, phone: e.target.value})}
-              className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm text-slate-900" 
+              className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm" 
             />
           </div>
 
           <div className="relative">
-            <Lock className="absolute left-4 top-3.5 text-slate-300 w-4 h-4" />
+            <Lock className="absolute left-4 top-4 text-slate-300 w-4 h-4" />
             <input 
               type={showPassword ? "text" : "password"} placeholder="Şifre" required
               value={formData.password}
               onChange={(e) => setFormData({...formData, password: e.target.value})}
-              className="w-full pl-11 pr-12 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm text-slate-900" 
+              className="w-full pl-11 pr-12 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm" 
             />
             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-3.5 text-slate-400">
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
 
@@ -112,11 +112,10 @@ export default function RegisterPage() {
             disabled={loading}
             className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-blue-600 transition-all disabled:bg-slate-300"
           >
-            {loading ? <Loader2 className="animate-spin w-5 h-5" /> : <>Kayıt Ol <ArrowRight size={18} /></>}
+            {loading ? <Loader2 className="animate-spin w-5 h-5" /> : <>Kayıt Ol <ArrowRight size={20} /></>}
           </button>
-
-          <p className="text-center text-sm text-slate-500 mt-6">
-            Hesabınız var mı? <Link href="/login" className="text-blue-600 font-bold hover:underline">Giriş Yap</Link>
+          <p className="text-center text-sm text-slate-500 mt-6 font-medium">
+            Zaten hesabınız var mı? <Link href="/login" className="text-blue-600 font-bold hover:underline">Giriş Yap</Link>
           </p>
         </form>
       </div>
