@@ -3,11 +3,9 @@ from fastapi import FastAPI
 import models
 from database import engine
 
-<<<<<<< HEAD
-from routers import auth_router, products_router, users_router, orders_router, reviews_router
-=======
-from routers import auth_router, products_router, users_router, orders_router
->>>>>>> 3adb9188a5aa6a0dfc1877f853f2548605659fe3
+
+from routers import auth_router, products_router, users_router, orders_router, reviews_router, analytics_router
+
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -19,20 +17,16 @@ app = FastAPI(
 app.include_router(auth_router.router)
 app.include_router(products_router.router) 
 app.include_router(users_router.router)
-<<<<<<< HEAD
 app.include_router(reviews_router.router)
-=======
 app.include_router(orders_router.router)
->>>>>>> 3adb9188a5aa6a0dfc1877f853f2548605659fe3
+
+app.include_router(analytics_router.router)
 
 @app.get("/")
 def read_root():
     return {
         "mesaj": "AradığınıBul Motoru Çalışıyor! 🚀",
         "durum": "Sistemler Çevrimiçi",
-<<<<<<< HEAD
-        "moduller": ["Katalog", "B2B İskonto", "Stok Analitiği", "İstek Listesi", "Sipariş İşlem Motoru", "Değerlendirme Sistemi"]
-=======
-        "moduller": ["Katalog", "B2B İskonto", "Stok Analitiği", "İstek Listesi", "Sipariş İşlem Motoru"]
->>>>>>> 3adb9188a5aa6a0dfc1877f853f2548605659fe3
+       
+        "moduller": ["Katalog", "B2B İskonto", "İstek Listesi", "Sipariş İşlem Motoru", "Değerlendirme Sistemi", "Yapay Zeka Destekli Stok Analitiği"]
     }
