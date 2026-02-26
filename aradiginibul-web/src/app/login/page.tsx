@@ -23,13 +23,11 @@ export default function LoginPage() {
       formData.append('username', email);
       formData.append('password', password);
 
-      // Backend OAuth2 yanıtını bekle
       const response = await api.post('/auth/login', formData);
-      
       localStorage.setItem('token', response.data.access_token);
-      router.push('/'); // Başarılı girişte ana sayfaya git
+      router.push('/');
     } catch (error: any) {
-      // image_89b005'deki nesne hatasını önlemek için güvenli string kontrolü
+      // image_89b005'deki [object Object] hatasını önlemek için güvenli mesaj
       const errorMsg = error.response?.data?.detail || "Giriş başarısız! Bilgilerinizi kontrol edin.";
       alert(typeof errorMsg === 'string' ? errorMsg : "Bir hata oluştu.");
     } finally {
@@ -42,7 +40,7 @@ export default function LoginPage() {
       onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
       className="relative min-h-screen w-full flex items-center justify-center overflow-hidden font-sans bg-slate-950"
     >
-      {/* 🌊 MOUSE TAKİP EDEN IŞIK - PARLAKLIĞI ARTIRILDI (%35 -> %50) */}
+      {/* 🌊 MOUSE IŞIĞI - PARLAKLIĞI %50'YE ÇIKARILDI */}
       <div 
         className="pointer-events-none absolute inset-0 z-10 transition-opacity duration-300"
         style={{
@@ -58,8 +56,7 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950"></div>
       </div>
 
-      {/* 📦 GİRİŞ KARTI */}
-      <div className="relative z-20 max-w-md w-full mx-4 transform transition-all duration-500">
+      <div className="relative z-20 max-w-md w-full mx-4">
         <div className="bg-white/10 backdrop-blur-3xl rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] p-10 border border-white/20">
           <div className="text-center mb-10">
             <div className="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-[0_0_30px_rgba(37,99,235,0.7)]">
@@ -88,11 +85,7 @@ export default function LoginPage() {
                 placeholder="Şifre"
                 className="w-full pl-12 pr-12 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 text-white font-medium" 
               />
-              <button 
-                type="button" 
-                onClick={() => setShowPassword(!showPassword)} 
-                className="absolute right-4 top-4 text-slate-500 hover:text-blue-400"
-              >
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-4 text-slate-500 hover:text-blue-400">
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
@@ -106,6 +99,7 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-10 pt-8 border-t border-white/5 text-center">
+            {/* Hatalı Link kapanış etiketi burada düzeltildi */}
             <p className="text-sm text-slate-400 font-medium">
               Hesabınız yok mu? <Link href="/register" className="text-blue-400 font-bold hover:text-blue-300">Kayıt Ol</Link>
             </p>
