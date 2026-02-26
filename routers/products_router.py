@@ -37,7 +37,7 @@ def get_product(id: int, db: Session = Depends(get_db)):
     
 
 
-    @router.post("/{id}/discount-rules", response_model=schemas.DiscountRuleResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/{id}/discount-rules", response_model=schemas.DiscountRuleResponse, status_code=status.HTTP_201_CREATED)
 def add_discount_rule(
     id: int, 
     rule: schemas.DiscountRuleCreate, 
