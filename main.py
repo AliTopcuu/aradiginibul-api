@@ -1,5 +1,10 @@
 import antigravity # Uçuş modu devrede! 🎈
 from fastapi import FastAPI
+import models
+from database import engine
+
+# SİHİRLİ SATIR: Bu kod çalıştığında models.py içindeki tüm tabloları veritabanında fiziksel olarak yaratır!
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="AradığınıBul API - Metro Market Edition",
