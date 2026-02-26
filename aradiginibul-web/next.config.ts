@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
       {
         source: '/',
         destination: '/login',
-        permanent: false, // Kullanıcı giriş yapınca geri dönebilsin diye false
+        permanent: false,
       },
     ];
   },
