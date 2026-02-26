@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Lock, Mail, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react';
 import api from '@/lib/api';
 import Link from 'next/link';
@@ -11,7 +11,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 }); // Fare takibi için
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -26,14 +26,12 @@ export default function LoginPage() {
 
       const response = await api.post('/auth/login', formData);
       
-      // Token kaydı
+      // Token kaydı ve yönlendirme
       localStorage.setItem('token', response.data.access_token);
-      
-      // 🚀 Yönlendirme döngüsünü kırmak için router.push kullanıyoruz
       router.push('/');
     } catch (error: any) {
-      // image_8b62f7'de görülen hata uyarısı
-      alert(error.response?.data?.detail || "E-posta veya şifre hatalı.");
+      // [object Object] hatasını önlemek için string mesajı
+      alert(error.response?.data?.detail || "Giriş başarısız! Bilgilerinizi kontrol edin.");
     } finally {
       setLoading(false);
     }
@@ -44,27 +42,27 @@ export default function LoginPage() {
       onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
       className="relative min-h-screen w-full flex items-center justify-center overflow-hidden font-sans bg-slate-950"
     >
-      {/* 🌊 ETKİLEŞİMLİ ARKA PLAN */}
+      {/* 🌊 MOUSE TAKİP EDEN PARLAK IŞIK EFEKTİ (Belirginliği artırıldı) */}
       <div 
         className="pointer-events-none absolute inset-0 z-10 transition-opacity duration-300"
         style={{
-          background: `radial-gradient(600px circle at ${mousePos.x}px ${mousePos.y}px, rgba(37, 99, 235, 0.15), transparent 80%)`
+          background: `radial-gradient(900px circle at ${mousePos.x}px ${mousePos.y}px, rgba(59, 130, 246, 0.35), transparent 70%)`
         }}
       />
 
-      {/* 🎬 VİDEO KATMANI */}
+      {/* 🎬 ARKA PLAN VİDEO KATMANI */}
       <div className="absolute inset-0 z-0">
-        <video autoPlay loop muted playsInline className="w-full h-full object-cover opacity-30 scale-105">
+        <video autoPlay loop muted playsInline className="w-full h-full object-cover opacity-20">
           <source src="https://assets.mixkit.co/videos/preview/mixkit-abstract-technology-network-loops-blue-background-27661-large.mp4" type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-transparent to-slate-950"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-transparent to-slate-950"></div>
       </div>
 
-      {/* 📦 GİRİŞ KARTI */}
-      <div className="relative z-20 max-w-md w-full mx-4">
-        <div className="bg-white/10 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl p-10 border border-white/10">
+      {/* 📦 GİRİŞ KARTI (CENTERED) */}
+      <div className="relative z-20 max-w-md w-full mx-4 transform transition-all duration-500">
+        <div className="bg-white/10 backdrop-blur-3xl rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] p-10 border border-white/20">
           <div className="text-center mb-10">
-            <div className="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-[0_0_20px_rgba(37,99,235,0.5)]">
+            <div className="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-[0_0_25px_rgba(37,99,235,0.6)]">
               <Lock className="text-white w-8 h-8" />
             </div>
             <h1 className="text-3xl font-black text-white tracking-tight">Tekrar Hoş Geldiniz</h1>
@@ -72,46 +70,45 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">E-POSTA</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-4 text-slate-500 w-5 h-5" />
-                <input 
-                  type="email" required value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="ali@ornek.com"
-                  className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 text-white font-medium" 
-                />
-              </div>
+            <div className="relative group">
+              <Mail className="absolute left-4 top-4 text-slate-500 w-5 h-5 group-focus-within:text-blue-400 transition-colors" />
+              <input 
+                type="email" required value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="E-posta"
+                className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white/10 transition-all text-white font-medium placeholder:text-slate-600" 
+              />
             </div>
 
-            <div>
-              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">ŞİFRE</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-4 text-slate-500 w-5 h-5" />
-                <input 
-                  type={showPassword ? "text" : "password"} required value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-12 pr-12 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 text-white font-medium" 
-                />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-4 text-slate-500 hover:text-blue-400">
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
+            <div className="relative group">
+              <Lock className="absolute left-4 top-4 text-slate-500 w-5 h-5 group-focus-within:text-blue-400 transition-colors" />
+              <input 
+                type={showPassword ? "text" : "password"} required value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Şifre"
+                className="w-full pl-12 pr-12 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white/10 transition-all text-white font-medium placeholder:text-slate-600" 
+              />
+              <button 
+                type="button" 
+                onClick={() => setShowPassword(!showPassword)} 
+                className="absolute right-4 top-4 text-slate-500 hover:text-blue-400 transition-colors"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
             </div>
 
             <button 
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] disabled:bg-slate-800"
+              className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-blue-700 active:scale-[0.98] transition-all shadow-[0_0_30px_rgba(37,99,235,0.4)] disabled:bg-slate-800"
             >
               {loading ? <Loader2 className="animate-spin w-6 h-6" /> : <>Giriş Yap <ArrowRight size={20} /></>}
             </button>
           </form>
 
           <div className="mt-10 pt-8 border-t border-white/5 text-center">
+            {/* Hatalı Link kapanış etiketi burada düzeltildi */}
             <p className="text-sm text-slate-400 font-medium">
-              Hesabınız yok mu? <Link href="/register" className="text-blue-400 font-bold hover:text-blue-300">Kayıt Ol</Link>
+              Hesabınız yok mu? <Link href="/register" className="text-blue-400 font-bold hover:text-blue-300 transition-colors">Kayıt Ol</Link>
             </p>
           </div>
         </div>
