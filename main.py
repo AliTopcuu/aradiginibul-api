@@ -1,44 +1,46 @@
-
-from fastapi import FastAPI
-import models
-from database import engine
+from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import JWTError, jwt
+from sqlalchemy.orm import Session
+import models, database, auth
 
-from routers.auth_router import router as auth_router
-from routers.products_router import router as products_router
-from routers.users_router import router as users_router
-from routers.orders_router import router as orders_router
-from routers.reviews_router import router as reviews_router
-from routers.analytics_router import router as analytics_router
-
-models.Base.metadata.create_all(bind=engine)
-
-app = FastAPI(
-    title="AradığınıBul API - AUT Market Edition",
-    description="Toptan ve Perakende e-ticaret altyapısı, B2B sipariş motoru.",
-    version="2.0.0"
-)
+app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Bu satırı "*" yaparak tüm dünyadan gelen isteklere kapıyı açıyoruz
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.include_router(auth_router)
-app.include_router(products_router)
-app.include_router(users_router)
-app.include_router(orders_router)
-app.include_router(reviews_router)
-app.include_router(analytics_router)
+SECRET_KEY = "Sizin_Sabit_Secret_Keyiniz" 
+ALGORITHM = "HS256"
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
-@app.get("/")
-def read_root():
-    return {
-        "mesaj": "AradığınıBul Motoru Çalışıyor! 🚀",
-        "durum": "Sistemler Çevrimiçi",
-       
-        "moduller": ["Katalog", "B2B İskonto", "İstek Listesi", "Sipariş İşlem Motoru", "Değerlendirme Sistemi", "Yapay Zeka Destekli Stok Analitiği"]
-    }
+@app.post("/auth/login")
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
+    user = db.query(models.User).filter(models.User.email == form_data.username).first()
+    if not user or not auth.verify_password(form_data.password, user.password):
+        raise HTTPException(status_code=400, detail="E-posta veya şifre hatalı")
+    
+    access_token = jwt.encode({"sub": user.email}, SECRET_KEY, algorithm=ALGORITHM)
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.get("/auth/me")
+async def get_me(token: str = Depends(oauth2_scheme), db: Session = Depends(database.get_db)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        user = db.query(models.User).filter(models.User.email == email).first()
+        if not user: raise HTTPException(status_code=404)
+        
+        # Frontend'in beklediği isimlerle veri gönder
+        return {
+            "first_name": user.first_name, # Ali
+            "last_name": user.last_name,   # Topçu
+            "email": user.email
+        }
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Oturum geçersiz")
