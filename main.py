@@ -3,10 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
-import models, database, auth # Veritabanı ve şifreleme yardımcıları
+import models, database, auth # Kendi yardımcı dosyalarınızı import edin
 
 app = FastAPI(title="AradığınıBul B2B API")
 
+# 🛡️ CORS Ayarları - Frontend erişimi için kritik
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,37 +16,32 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 🔑 Sabit Ayarlar (Login ve Me uyuşmalı)
-SECRET_KEY = "Sizin_Cok_Gizli_Anahtariniz" 
+SECRET_KEY = "Sizin_Sabit_Anahtariniz" # Login ile aynı olmalı
 ALGORITHM = "HS256"
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
-# --- GİRİŞ ENDPOINT ---
 @app.post("/auth/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
     user = db.query(models.User).filter(models.User.email == form_data.username).first()
     if not user or not auth.verify_password(form_data.password, user.password):
         raise HTTPException(status_code=400, detail="E-posta veya şifre hatalı")
     
-    # Token Oluştur
     access_token = jwt.encode({"sub": user.email}, SECRET_KEY, algorithm=ALGORITHM)
     return {"access_token": access_token, "token_type": "bearer"}
 
-# --- BİLGİ GETİRME ENDPOINT ---
 @app.get("/auth/me")
 async def get_me(token: str = Depends(oauth2_scheme), db: Session = Depends(database.get_db)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
+        user = db.query(models.User).filter(models.User.email == email).first()
+        if not user: raise HTTPException(status_code=404)
+        
+        # PostgreSQL'deki kolon isimleriyle birebir eşleşme
+        return {
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "email": user.email
+        }
     except JWTError:
         raise HTTPException(status_code=401, detail="Oturum geçersiz")
-
-    user = db.query(models.User).filter(models.User.email == email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
-
-    return {
-        "first_name": user.first_name, # PostgreSQL: Ali
-        "last_name": user.last_name,   # PostgreSQL: Topçu
-        "email": user.email
-    }
