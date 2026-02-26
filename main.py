@@ -3,11 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
-import models, database, auth
+import models, database, auth # Veritabanı ve şifreleme yardımcıları
 
 app = FastAPI(title="AradığınıBul B2B API")
 
-# 🛡️ CORS Ayarları
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,54 +15,37 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 🔑 Sabitler ve Güvenlik Tanımları
-SECRET_KEY = "Sizin_Sabit_Secret_Keyiniz" 
+# 🔑 Sabit Ayarlar (Login ve Me uyuşmalı)
+SECRET_KEY = "Sizin_Cok_Gizli_Anahtariniz" 
 ALGORITHM = "HS256"
-
-# HATAYI ÇÖZEN SATIR BURASI: oauth2_scheme mutlaka tanımlanmalı
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
-@app.post("/auth/register")
-async def register(user_in: dict, db: Session = Depends(database.get_db)):
-    db_user = db.query(models.User).filter(models.User.email == user_in["email"]).first()
-    if db_user:
-        raise HTTPException(status_code=400, detail="Bu e-posta zaten kayıtlı")
-    
-    # Şifre alanını modellerinize göre (hashed_password) kaydedin
-    new_user = models.User(
-        email=user_in["email"],
-        hashed_password=auth.get_password_hash(user_in["password"]),
-        first_name=user_in.get("first_name"),
-        last_name=user_in.get("last_name"),
-        phone=user_in.get("phone")
-    )
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return {"message": "Kayıt başarıyla tamamlandı"}
-
+# --- GİRİŞ ENDPOINT ---
 @app.post("/auth/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
     user = db.query(models.User).filter(models.User.email == form_data.username).first()
-    if not user or not auth.verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="E-posta veya şifre hatalı")
+    if not user or not auth.verify_password(form_data.password, user.password):
+        raise HTTPException(status_code=400, detail="E-posta veya şifre hatalı")
     
+    # Token Oluştur
     access_token = jwt.encode({"sub": user.email}, SECRET_KEY, algorithm=ALGORITHM)
     return {"access_token": access_token, "token_type": "bearer"}
 
+# --- BİLGİ GETİRME ENDPOINT ---
 @app.get("/auth/me")
 async def get_me(token: str = Depends(oauth2_scheme), db: Session = Depends(database.get_db)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
-        user = db.query(models.User).filter(models.User.email == email).first()
-        if not user: raise HTTPException(status_code=404)
-        
-        return {
-            "first_name": user.first_name, 
-            "last_name": user.last_name, 
-            "email": user.email,
-            "phone": user.phone
-        }
     except JWTError:
         raise HTTPException(status_code=401, detail="Oturum geçersiz")
+
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
+
+    return {
+        "first_name": user.first_name, # PostgreSQL: Ali
+        "last_name": user.last_name,   # PostgreSQL: Topçu
+        "email": user.email
+    }
