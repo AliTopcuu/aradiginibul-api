@@ -10,7 +10,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  // 🌌 Mouse pozisyonu için state eklendi
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -29,7 +28,9 @@ export default function LoginPage() {
       localStorage.setItem('token', response.data.access_token);
       window.location.href = "/";
     } catch (error: any) {
-      alert("Giriş başarısız! E-posta veya şifre hatalı.");
+      // Hata mesajını daha kullanıcı dostu ve okunaklı hale getirdik
+      const detail = error.response?.data?.detail;
+      alert(typeof detail === 'string' ? detail : "Giriş başarısız! E-posta veya şifre hatalı.");
     } finally {
       setLoading(false);
     }
@@ -56,7 +57,7 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950"></div>
       </div>
 
-      {/* 📦 GİRİŞ KARTI (CENTERED) */}
+      {/* 📦 GİRİŞ KARTI */}
       <div className="relative z-20 max-w-md w-full mx-4">
         <div className="bg-white/10 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl p-10 border border-white/10">
           <div className="text-center mb-10">
@@ -64,7 +65,7 @@ export default function LoginPage() {
               <Lock className="text-white w-8 h-8" />
             </div>
             <h1 className="text-3xl font-black text-white tracking-tight">Tekrar Hoş Geldiniz</h1>
-            <p className="text-slate-400 mt-2 text-sm font-medium">B2B Paneline güvenli giriş yapın</p>
+            <p className="text-slate-400 mt-2 text-sm font-medium">Bayi Hesabına Gİriş Yapın</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
@@ -76,7 +77,8 @@ export default function LoginPage() {
                   type="email" required value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="ali@ornek.com"
-                  className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all text-white placeholder:text-slate-600" 
+                  // Placeholder rengi beyaza (şeffaf beyaz) çekildi ve metin netleştirildi
+                  className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all text-white placeholder:text-white/70 font-medium" 
                 />
               </div>
             </div>
@@ -89,7 +91,8 @@ export default function LoginPage() {
                   type={showPassword ? "text" : "password"} required value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-12 pr-12 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all text-white placeholder:text-slate-600" 
+                  // Placeholder rengi beyaza (şeffaf beyaz) çekildi
+                  className="w-full pl-12 pr-12 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all text-white placeholder:text-white/70 font-medium" 
                 />
                 <button 
                   type="button" 

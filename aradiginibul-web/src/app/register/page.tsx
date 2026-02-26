@@ -17,7 +17,6 @@ export default function RegisterPage() {
   
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  // 🌌 Mouse pozisyonu için state eklendi
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const router = useRouter();
 
@@ -54,7 +53,7 @@ export default function RegisterPage() {
       onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
       className="relative min-h-screen w-full flex items-center justify-center overflow-hidden font-sans bg-slate-950"
     >
-      {/* 🌊 EKSTRA PARLAK SARI MOUSE IŞIĞI (Sarı Temalı) */}
+      {/* 🌊 SARI MOUSE IŞIĞI */}
       <div 
         className="pointer-events-none absolute inset-0 z-10 transition-opacity duration-300"
         style={{
@@ -83,17 +82,19 @@ export default function RegisterPage() {
 
           <form onSubmit={handleRegister} className="space-y-5">
             <div className="grid grid-cols-2 gap-4">
+              {/* İsim Alanı - Renkler Beyaza Çekildi */}
               <input 
                 type="text" placeholder="İsim" required
                 value={formData.firstName}
                 onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                className="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:yellow-500 transition-all text-white placeholder:text-slate-500 text-sm" 
+                className="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-yellow-500 transition-all text-white placeholder:text-white/70 text-sm" 
               />
+              {/* Soyisim Alanı - Renkler Beyaza Çekildi */}
               <input 
                 type="text" placeholder="Soyisim" required
                 value={formData.lastName}
                 onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                className="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:yellow-500 transition-all text-white placeholder:text-slate-500 text-sm" 
+                className="w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-yellow-500 transition-all text-white placeholder:text-white/70 text-sm" 
               />
             </div>
 
@@ -103,7 +104,7 @@ export default function RegisterPage() {
                 type="email" placeholder="E-posta" required
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
-                className="w-full pl-11 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:yellow-500 transition-all text-white placeholder:text-slate-500 text-sm" 
+                className="w-full pl-11 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-yellow-500 transition-all text-white placeholder:text-white/70 text-sm" 
               />
             </div>
 
@@ -113,7 +114,7 @@ export default function RegisterPage() {
                 type="tel" placeholder="Telefon (05xx...)" required
                 value={formData.phone}
                 onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                className="w-full pl-11 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:yellow-500 transition-all text-white placeholder:text-slate-500 text-sm" 
+                className="w-full pl-11 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-yellow-500 transition-all text-white placeholder:text-white/70 text-sm" 
               />
             </div>
 
@@ -123,7 +124,7 @@ export default function RegisterPage() {
                 type={showPassword ? "text" : "password"} placeholder="Şifre" required
                 value={formData.password}
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
-                className="w-full pl-11 pr-12 py-3.5 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:yellow-500 transition-all text-white placeholder:text-slate-500 text-sm" 
+                className="w-full pl-11 pr-12 py-3.5 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-yellow-500 transition-all text-white placeholder:text-white/70 text-sm" 
               />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-3.5 text-slate-500 hover:text-yellow-500 transition-colors">
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
