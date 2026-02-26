@@ -19,16 +19,17 @@ export default function LoginPage() {
   setLoading(true);
   try {
     const formData = new FormData();
-    formData.append('username', email); // Backend 'username' bekler
+    // 🚀 ÖNEMLİ: FastAPI OAuth2 'username' bekler, 'email' değil
+    formData.append('username', email); 
     formData.append('password', password);
 
     const res = await api.post('/auth/login', formData);
     localStorage.setItem('token', res.data.access_token);
     router.push('/');
   } catch (err: any) {
-    // image_89b005'deki hatayı çözmek için detail alanını oku
-    const message = err.response?.data?.detail;
-    alert(typeof message === 'string' ? message : "Giriş başarısız, verileri kontrol edin.");
+    // 💡 Nesne hatasını (image_89b005) önlemek için detail'i stringe zorla
+    const errorDetail = err.response?.data?.detail;
+    alert(typeof errorDetail === 'string' ? errorDetail : "Giriş başarısız.");
   } finally {
     setLoading(false);
   }
