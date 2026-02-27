@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, CheckCircle2, Loader2, CreditCard, Lock, Calendar, User } from 'lucide-react';
+import { CheckCircle2, Loader2, CreditCard, Lock, Calendar, User, Hash, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/api';
 
@@ -12,6 +12,7 @@ export default function CheckoutPage() {
   const [step, setStep] = useState<'review' | 'payment'>('review');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [orderNumber, setOrderNumber] = useState('');
   const [saveCard, setSaveCard] = useState(false);
   const [cartTotal, setCartTotal] = useState(0);
   const [cardData, setCardData] = useState({ holder: '', number: '', expiry: '', cvc: '' });
@@ -45,32 +46,41 @@ export default function CheckoutPage() {
     setCardData({ ...cardData, number: parts ? parts.join(' ') : v });
   };
 
-  // ✅ SKT: 2 rakamdan sonra "/" ekleyen ve toplam 5 karakter sınırı (AA/YY) olan fonksiyon
   const handleExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let v = e.target.value.replace(/[^0-9]/gi, '');
-    if (v.length >= 2) {
-      v = v.substring(0, 2) + '/' + v.substring(2, 4);
-    }
+    if (v.length >= 2) v = v.substring(0, 2) + '/' + v.substring(2, 4);
     setCardData({ ...cardData, expiry: v.substring(0, 5) });
   };
 
   const handlePayment = () => {
     if (cardData.number.length < 19 || cardData.expiry.length < 5 || cardData.cvc.length < 3) {
-      alert("Lütfen tüm alanları doldurun."); return;
+      alert("Lütfen bilgileri eksiksiz doldurun."); return;
     }
     setIsProcessing(true);
+    const randomID = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const newOrderNo = `ORD-2026-${randomID}`;
+
     setTimeout(() => {
-      // ✅ KRİTİK İZOLASYON: Kullanıcıya özel mühürlü anahtar
-      const userId = user?.email;
+      const userId = user?.email || "guest";
+      
+      // ✅ Siparişi Mühürlü Kaydet
+      const ordersKey = `orders_${userId}`;
+      const existingOrders = JSON.parse(localStorage.getItem(ordersKey) || '[]');
+      const newOrder = {
+        id: newOrderNo,
+        date: new Date().toLocaleDateString('tr-TR'),
+        total: cartTotal,
+        status: 'Hazırlanıyor'
+      };
+      localStorage.setItem(ordersKey, JSON.stringify([newOrder, ...existingOrders]));
+
       if (saveCard) {
-        const storageKey = `savedCards_${userId}`;
-        const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
-        if (!existing.some((c: any) => c.number === cardData.number)) {
-          localStorage.setItem(storageKey, JSON.stringify([...existing, { 
-            id: Date.now(), holder: cardData.holder, number: cardData.number, expiry: cardData.expiry 
-          }]));
-        }
+        const cardKey = `savedCards_${userId}`;
+        const existingCards = JSON.parse(localStorage.getItem(cardKey) || '[]');
+        localStorage.setItem(cardKey, JSON.stringify([...existingCards, { id: Date.now(), ...cardData }]));
       }
+
+      setOrderNumber(newOrderNo);
       setIsProcessing(false);
       setIsSuccess(true);
       localStorage.removeItem(`cartData_${userId}`);
@@ -80,53 +90,31 @@ export default function CheckoutPage() {
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#1a0005]"><Loader2 className="animate-spin text-amber-500 w-12 h-12" /></div>;
 
   if (isSuccess) return (
-    <div className="min-h-screen flex items-center justify-center bg-[#1a0005] p-10 text-center">
+    <div className="min-h-screen flex items-center justify-center bg-[#1a0005] p-10 text-center text-white">
       <div className="bg-black/20 backdrop-blur-3xl p-16 rounded-[3rem] border border-amber-500/30 max-w-xl">
-        <div className="w-24 h-24 bg-amber-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-amber-500/40"><CheckCircle2 size={48} className="text-black" /></div>
-        <h2 className="text-4xl font-black text-white italic uppercase mb-4 tracking-tighter">İşlem Tamam!</h2>
-        <Link href="/"><button className="w-full bg-amber-500 text-black py-6 rounded-full font-black uppercase text-[11px] hover:bg-amber-400 mt-10">Markete Dön</button></Link>
+        <CheckCircle2 size={64} className="text-amber-500 mx-auto mb-6" />
+        <h2 className="text-3xl font-black italic uppercase mb-4">İşlem Başarılı</h2>
+        <div className="bg-white/5 p-4 rounded-xl mb-8 font-mono text-xl tracking-widest">{orderNumber}</div>
+        <Link href="/orders"><button className="w-full bg-amber-500 text-black py-4 rounded-full font-black uppercase text-xs">Siparişlerim</button></Link>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen w-full flex bg-gradient-to-br from-[#b8860b] via-[#8b4513] to-[#1a0005] bg-fixed text-slate-200 font-sans">
-      <main className="flex-1 max-w-4xl mx-auto p-10">
-        <div className="bg-black/20 backdrop-blur-3xl rounded-[3rem] border border-white/5 p-16 shadow-2xl">
-          {step === 'review' ? (
-             <div className="animate-in fade-in slide-in-from-right-4 duration-500 text-center">
-               <h1 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-12">Ödeme Onayı</h1>
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 text-left">
-                  <div className="bg-white/5 border border-white/10 p-6 rounded-[2rem]"><p className="text-[10px] text-white/30 uppercase mb-2">Sevk Adresi</p><p className="text-xs font-bold leading-relaxed text-white">Mimarsinan, Samsun</p></div>
-                  <div className="bg-white/5 border border-white/10 p-6 rounded-[2rem] flex items-center gap-4 text-white"><CreditCard className="text-amber-500" /> Kredi Kartı</div>
-               </div>
-               <button onClick={() => setStep('payment')} className="w-full bg-amber-500 text-black py-6 rounded-full font-black uppercase text-[11px] hover:bg-amber-400 transition-all shadow-xl">Kart Bilgilerine Geç</button>
-             </div>
-          ) : (
-            <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-              <div className="text-center mb-10">
-                <h1 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-2 italic">Güvenli Ödeme</h1>
-                <div className="inline-block px-6 py-2 bg-amber-500/10 border border-amber-500/20 rounded-full font-mono text-amber-500 font-black">₺{cartTotal.toLocaleString()}</div>
-              </div>
-              <div className="space-y-5">
-                <input type="text" onChange={(e) => setCardData({...cardData, holder: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 outline-none focus:border-amber-500 font-black text-xs uppercase text-white" placeholder="KART ÜZERİNDEKİ İSİM"/>
-                <input type="text" value={cardData.number} onChange={handleCardNumberChange} className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 outline-none focus:border-amber-500 font-mono text-sm tracking-[0.2em] text-white" placeholder="0000 0000 0000 0000"/>
-                <div className="grid grid-cols-2 gap-5">
-                  <input type="text" value={cardData.expiry} onChange={handleExpiryChange} className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 outline-none focus:border-amber-500 font-mono text-xs text-white" placeholder="AA / YY"/>
-                  <input type="password" maxLength={3} onChange={(e) => setCardData({...cardData, cvc: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 outline-none focus:border-amber-500 font-mono text-xs text-white" placeholder="CVC / CVV"/>
-                </div>
-                <div className="flex items-center gap-3 py-2 cursor-pointer" onClick={() => setSaveCard(!saveCard)}>
-                  <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${saveCard ? 'bg-amber-500 border-amber-500' : 'border-white/20'}`}>{saveCard && <CheckCircle2 size={12} className="text-black" />}</div>
-                  <span className="text-[10px] font-black uppercase text-white/40">Bu kartı sadece bana özel kaydet</span>
-                </div>
-                <button onClick={handlePayment} disabled={isProcessing} className="w-full bg-amber-500 text-black py-6 rounded-full font-black uppercase text-[11px] shadow-2xl hover:bg-amber-400 transition-all flex items-center justify-center gap-3">
-                  {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <><Lock size={16} /> Ödemeyi Onayla</>}
-                </button>
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-[#b8860b] via-[#8b4513] to-[#1a0005] flex items-center justify-center p-10 text-white font-sans">
+      <div className="max-w-md w-full bg-black/40 backdrop-blur-3xl p-12 rounded-[3rem] border border-white/10 shadow-2xl">
+         <div className="text-center mb-10"><h1 className="text-2xl font-black italic uppercase tracking-tighter">Güvenli Ödeme</h1><p className="text-amber-500 font-mono text-xl mt-2 font-black">₺{cartTotal.toLocaleString()}</p></div>
+         <div className="space-y-4">
+            <div className="relative"><User className="absolute left-4 top-4 text-white/20" size={18}/><input type="text" placeholder="KART SAHİBİ" onChange={(e) => setCardData({...cardData, holder: e.target.value})} className="w-full bg-white/5 p-4 pl-12 rounded-xl border border-white/10 outline-none focus:border-amber-500 uppercase font-black text-xs" /></div>
+            <div className="relative"><CreditCard className="absolute left-4 top-4 text-white/20" size={18}/><input type="text" value={cardData.number} placeholder="KART NUMARASI" onChange={handleCardNumberChange} className="w-full bg-white/5 p-4 pl-12 rounded-xl border border-white/10 outline-none focus:border-amber-500 font-mono text-sm" /></div>
+            <div className="grid grid-cols-2 gap-4">
+               <div className="relative"><Calendar className="absolute left-4 top-4 text-white/20" size={18}/><input type="text" value={cardData.expiry} placeholder="AA/YY" onChange={handleExpiryChange} className="w-full bg-white/5 p-4 pl-12 rounded-xl border border-white/10 outline-none focus:border-amber-500 font-mono text-xs" /></div>
+               <div className="relative"><Lock className="absolute left-4 top-4 text-white/20" size={18}/><input type="password" placeholder="CVC" onChange={(e) => setCardData({...cardData, cvc: e.target.value})} className="w-full bg-white/5 p-4 pl-12 rounded-xl border border-white/10 outline-none focus:border-amber-500 font-mono text-xs" /></div>
             </div>
-          )}
-        </div>
-      </main>
+            <div className="flex items-center gap-3 py-2 cursor-pointer" onClick={() => setSaveCard(!saveCard)}><div className={`w-4 h-4 border rounded ${saveCard ? 'bg-amber-500' : 'border-white/20'}`} /> <span className="text-[9px] font-black uppercase text-white/40">Kartı Kaydet</span></div>
+            <button onClick={handlePayment} disabled={isProcessing} className="w-full bg-amber-500 text-black py-4 rounded-full font-black uppercase text-xs shadow-xl flex items-center justify-center gap-2">{isProcessing ? <Loader2 className="animate-spin" /> : <><ShieldCheck size={16}/> Ödemeyi Tamamla</>}</button>
+         </div>
+      </div>
     </div>
   );
 }

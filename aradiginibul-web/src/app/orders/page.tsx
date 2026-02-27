@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CreditCard, Trash2, Store, ShoppingCart, History, LogOut, Loader2 } from 'lucide-react';
+import { History, Store, ShoppingCart, CreditCard, LogOut, Loader2, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/api';
 
-export default function SavedCardsPage() {
-  const [cards, setCards] = useState<any[]>([]);
+export default function OrdersPage() {
+  const [orders, setOrders] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -20,23 +20,16 @@ export default function SavedCardsPage() {
       try {
         const res = await api.get('/auth/me');
         setUser(res.data);
-        const data = JSON.parse(localStorage.getItem(`savedCards_${res.data.email}`) || '[]');
-        setCards(data);
+        const data = JSON.parse(localStorage.getItem(`orders_${res.data.email}`) || '[]');
+        setOrders(data);
       } catch (error) {
         setUser({ first_name: "Bayi", last_name: "Üyesi", email: fallbackID });
-        const data = JSON.parse(localStorage.getItem(`savedCards_${fallbackID}`) || '[]');
-        setCards(data);
+        const data = JSON.parse(localStorage.getItem(`orders_${fallbackID}`) || '[]');
+        setOrders(data);
       } finally { setLoading(false); }
     };
     init();
   }, [router]);
-
-  const deleteCard = (id: number) => {
-    const userId = user?.email || "guest";
-    const updated = cards.filter(c => c.id !== id);
-    setCards(updated);
-    localStorage.setItem(`savedCards_${userId}`, JSON.stringify(updated));
-  };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#1a0005]"><Loader2 className="animate-spin text-amber-500 w-12 h-12" /></div>;
 
@@ -47,30 +40,39 @@ export default function SavedCardsPage() {
         <nav className="space-y-2 flex-1">
           <Link href="/"><SidebarItem icon={<Store size={18} />} label="Ürün Marketi" /></Link>
           <Link href="/cart"><SidebarItem icon={<ShoppingCart size={18} />} label="Sepetim" /></Link>
-          <SidebarItem icon={<CreditCard size={18} />} label="Kayıtlı Kartlarım" active />
-          <Link href="/orders"><SidebarItem icon={<History size={18} />} label="Siparişlerim" /></Link>
+          <Link href="/saved-cards"><SidebarItem icon={<CreditCard size={18} />} label="Kayıtlı Kartlarım" /></Link>
+          <SidebarItem icon={<History size={18} />} label="Siparişlerim" active />
         </nav>
         <button onClick={() => { localStorage.removeItem('token'); router.push("/login"); }} className="flex items-center gap-3 text-white/40 hover:text-red-400 font-bold text-xs pt-6 border-t border-white/10 px-2 uppercase transition-all"><LogOut size={16} /> Çıkış Yap</button>
       </aside>
 
       <main className="flex-1 p-10 max-w-5xl mx-auto">
-        <h1 className="text-4xl font-black text-white italic uppercase mb-10 tracking-tighter">Kartlarım</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {cards.length === 0 ? (
-            <div className="col-span-2 bg-black/20 p-20 rounded-[3rem] border border-white/5 text-center text-white/20 italic">Kartınız bulunmuyor.</div>
-          ) : (
-            cards.map(c => (
-              <div key={c.id} className="bg-gradient-to-br from-white/10 to-transparent p-10 rounded-[2.5rem] border border-white/10 relative group">
-                <CreditCard className="text-amber-500 mb-8" size={32} />
-                <button onClick={() => deleteCard(c.id)} className="absolute top-10 right-10 text-red-500/30 hover:text-red-500"><Trash2 size={18}/></button>
-                <p className="text-xl font-mono tracking-widest text-white mb-4">{c.number}</p>
-                <div className="flex justify-between border-t border-white/5 pt-6 uppercase text-[8px] font-black text-amber-500">
-                  <div><span>Sahibi</span><p className="text-xs text-white/80">{c.holder}</p></div>
-                  <div><span>SKT</span><p className="text-xs text-white/80">{c.expiry}</p></div>
-                </div>
-              </div>
-            ))
-          )}
+        <h1 className="text-4xl font-black text-white italic uppercase mb-10 tracking-tighter">Siparişlerim</h1>
+        <div className="bg-black/20 backdrop-blur-3xl rounded-[2.5rem] border border-white/5 overflow-hidden shadow-2xl">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-white/5 bg-white/5 text-amber-500 text-[10px] font-black uppercase">
+                <th className="p-6">Sipariş No</th>
+                <th className="p-6">Tarih</th>
+                <th className="p-6">Tutar</th>
+                <th className="p-6">Durum</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.length === 0 ? (
+                <tr><td colSpan={4} className="p-20 text-center text-white/20 italic">Henüz siparişiniz yok.</td></tr>
+              ) : (
+                orders.map((o) => (
+                  <tr key={o.id} className="border-b border-white/5 hover:bg-white/5 transition-colors text-white/80">
+                    <td className="p-6 font-mono text-xs font-black">{o.id}</td>
+                    <td className="p-6 text-xs font-bold">{o.date}</td>
+                    <td className="p-6 text-sm font-black">₺{o.total.toLocaleString()}</td>
+                    <td className="p-6"><span className="px-3 py-1 bg-amber-500/10 text-amber-500 text-[9px] font-black uppercase rounded-full">{o.status}</span></td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </main>
     </div>

@@ -27,7 +27,8 @@ export default function CartPage() {
         setUser(res.data);
         loadCartData(res.data.email);
       } catch (error) {
-        setUser({ first_name: "Ali Ufuktan", last_name: "Topcu", email: fallbackID });
+        // Hata durumunda dinamik misafir ismi
+        setUser({ first_name: "Bayi", last_name: "Üyesi", email: fallbackID });
         loadCartData(fallbackID);
       } finally { setLoading(false); }
     };
@@ -55,13 +56,30 @@ export default function CartPage() {
   return (
     <div className="min-h-screen w-full flex bg-gradient-to-br from-[#b8860b] via-[#8b4513] to-[#1a0005] bg-fixed text-slate-200 font-sans">
       <aside className="w-64 bg-black/40 backdrop-blur-3xl border-r border-white/5 hidden lg:flex flex-col p-6 sticky top-0 h-screen">
-        <div className="flex items-center gap-3 mb-10 px-2 text-white italic font-black uppercase"><Store className="text-amber-500" /> AradığınıBul</div>
+        <div className="flex items-center gap-3 mb-10 px-2 text-white font-black uppercase italic text-xl">AradığınıBul</div>
         <nav className="space-y-2 flex-1">
-          <Link href="/"><SidebarItem icon={<Store size={18} />} label="Ürün Marketi" /></Link>
+          {/* ✅ Ürün Marketi Linki */}
+          <Link href="/">
+            <SidebarItem icon={<Store size={18} />} label="Ürün Marketi" />
+          </Link>
+
+          {/* ✅ Sepetim (Aktif) */}
           <SidebarItem icon={<ShoppingCart size={18} />} label="Sepetim" active count={cart.length > 0 ? cart.length.toString() : null} />
-          <Link href="/saved-cards"><SidebarItem icon={<CreditCard size={18} />} label="Kayıtlı Kartlarım" /></Link>
-          <SidebarItem icon={<History size={18} />} label="Siparişlerim" />
+
+          {/* ✅ Kayıtlı Kartlarım Linki */}
+          <Link href="/saved-cards">
+            <SidebarItem icon={<CreditCard size={18} />} label="Kayıtlı Kartlarım" />
+          </Link>
+
+          {/* ✅ Siparişlerim Linki */}
+          <Link href="/orders">
+            <SidebarItem icon={<History size={18} />} label="Siparişlerim" />
+          </Link>
         </nav>
+        
+        <button onClick={() => { localStorage.removeItem('token'); router.push("/login"); }} className="flex items-center gap-3 text-white/40 hover:text-red-400 font-bold text-xs pt-6 border-t border-white/10 px-2 uppercase transition-all">
+          <LogOut size={16} /> Çıkış Yap
+        </button>
       </aside>
 
       <main className="flex-1 overflow-y-auto pb-20">
