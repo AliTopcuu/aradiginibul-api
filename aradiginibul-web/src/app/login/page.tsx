@@ -45,7 +45,7 @@ export default function LoginPage() {
       <div 
         className="pointer-events-none absolute inset-0 z-10 transition-opacity duration-300"
         style={{
-          background: `radial-gradient(1100px circle at ${mousePos.x}px ${mousePos.y}px, rgba(37, 99, 235, 0.6), transparent 80%)`
+          background: `radial-gradient(1100px circle at ${mousePos.x}px ${mousePos.y}px, rgba(37, 99, 23, 0.6), transparent 80%)`
         }}
       />
 
@@ -61,7 +61,7 @@ export default function LoginPage() {
       <div className="relative z-20 max-w-md w-full mx-4">
         <div className="bg-white/10 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl p-10 border border-white/10">
           <div className="text-center mb-10">
-            <div className="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-blue-500/20">
+            <div className="bg-emerald-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-emerald-500/40">
               <Lock className="text-white w-8 h-8" />
             </div>
             <h1 className="text-3xl font-black text-white tracking-tight">Tekrar Hoş Geldiniz</h1>
@@ -72,7 +72,7 @@ export default function LoginPage() {
             <div className="group">
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">E-POSTA</label>
               <div className="relative">
-                <Mail className="absolute left-4 top-4 text-slate-500 w-5 h-5 group-focus-within:text-blue-400 transition-colors" />
+                <Mail className="absolute left-4 top-4 text-slate-500 w-5 h-5 group-focus-within:text-emerald-400 transition-colors" />
                 <input 
                   type="email" required value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -86,13 +86,13 @@ export default function LoginPage() {
             <div className="group">
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">ŞİFRE</label>
               <div className="relative">
-                <Lock className="absolute left-4 top-4 text-slate-500 w-5 h-5 group-focus-within:text-blue-400 transition-colors" />
+                <Lock className="absolute left-4 top-4 text-slate-500 w-5 h-5 group-focus-within:text-emerald-400 transition-colors" />
                 <input 
                   type={showPassword ? "text" : "password"} required value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   // Placeholder rengi beyaza (şeffaf beyaz) çekildi
-                  className="w-full pl-12 pr-12 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all text-white placeholder:text-white/70 font-medium" 
+                  className="w-full pl-12 pr-12 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-white placeholder:text-white/70 font-medium" 
                 />
                 <button 
                   type="button" 
@@ -106,7 +106,7 @@ export default function LoginPage() {
 
             <button 
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-blue-700 active:scale-[0.98] transition-all shadow-xl shadow-blue-500/20 disabled:bg-slate-800"
+              className="w-full bg-green-400 text-white py-4 rounded-2xl font-black flex items-center justify-center gap-2  active:scale-[0.98] transition-all shadow-xl shadow-emerald-500/20 disabled:bg-slate-800"
             >
               {loading ? <Loader2 className="animate-spin w-6 h-6" /> : <>Giriş Yap <ArrowRight size={20} /></>}
             </button>
