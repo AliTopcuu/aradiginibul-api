@@ -1,5 +1,6 @@
 
 from fastapi import FastAPI
+from sqlalchemy import text
 import models
 from database import engine
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,6 +13,24 @@ from routers.reviews_router import router as reviews_router
 from routers.analytics_router import router as analytics_router
 
 models.Base.metadata.create_all(bind=engine)
+
+# Mevcut veritabanına yeni sütunları güvenli şekilde ekle
+# (create_all mevcut tablolara sütun eklemez, bu yüzden ALTER TABLE kullanıyoruz)
+def run_migrations():
+    new_columns = [
+        ("users", "first_name", "VARCHAR"),
+        ("users", "last_name", "VARCHAR"),
+        ("users", "phone", "VARCHAR"),
+    ]
+    with engine.connect() as conn:
+        for table, column, col_type in new_columns:
+            try:
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}"))
+                conn.commit()
+            except Exception:
+                conn.rollback()  # Sütun zaten varsa hata verir, bunu yoksay
+
+run_migrations()
 
 app = FastAPI(
     title="AradığınıBul API - AUT Market Edition",
