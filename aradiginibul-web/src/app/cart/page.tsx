@@ -21,10 +21,7 @@ export default function CartPage() {
     const init = async () => {
       const token = localStorage.getItem('token');
       if (!token) { router.push("/login"); return; }
-
-      // JWT token'dan email'i doğrudan çöz
       const tokenEmail = getUserEmailFromToken();
-
       try {
         const res = await api.get('/auth/me');
         setUser(res.data);
@@ -50,9 +47,21 @@ export default function CartPage() {
 
   const removeItem = (id: number) => saveCart(cart.filter(i => i.id !== id));
 
+  // Fiyat Hesaplamaları
   const subTotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
   const tax = subTotal * 0.20;
-  const grandTotal = subTotal + tax;
+  const subTotalWithTax = subTotal + tax;
+
+  // 50+ adet olan ürünlere %10 indirim hesapla (KDV dahil fiyat üzerinden)
+  const discountAmount = cart.reduce((sum, i) => {
+    if (i.quantity >= 50) {
+      return sum + (i.price * i.quantity * 1.2 * 0.10);
+    }
+    return sum;
+  }, 0);
+
+  const discountedItems = cart.filter(i => i.quantity >= 50);
+  const grandTotal = subTotalWithTax - discountAmount;
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#1a0005]"><Loader2 className="animate-spin text-amber-500 w-12 h-12" /></div>;
 
@@ -61,25 +70,17 @@ export default function CartPage() {
       <aside className="w-64 bg-black/40 backdrop-blur-3xl border-r border-white/5 hidden lg:flex flex-col p-6 sticky top-0 h-screen">
         <div className="flex items-center gap-3 mb-10 px-2 text-white font-black uppercase italic text-xl">AradığınıBul</div>
         <nav className="space-y-2 flex-1">
-          {/* ✅ Ürün Marketi Linki */}
           <Link href="/">
             <SidebarItem icon={<Store size={18} />} label="Ürün Marketi" />
           </Link>
-
-          {/* ✅ Sepetim (Aktif) */}
           <SidebarItem icon={<ShoppingCart size={18} />} label="Sepetim" active count={cart.length > 0 ? cart.length.toString() : null} />
-
-          {/* ✅ Kayıtlı Kartlarım Linki */}
           <Link href="/saved-cards">
             <SidebarItem icon={<CreditCard size={18} />} label="Kayıtlı Kartlarım" />
           </Link>
-
-          {/* ✅ Siparişlerim Linki */}
           <Link href="/orders">
             <SidebarItem icon={<History size={18} />} label="Siparişlerim" />
           </Link>
         </nav>
-
         <button onClick={() => { localStorage.removeItem('token'); router.push("/login"); }} className="flex items-center gap-3 text-white/40 hover:text-red-400 font-bold text-xs pt-6 border-t border-white/10 px-2 uppercase transition-all">
           <LogOut size={16} /> Çıkış Yap
         </button>
@@ -102,6 +103,9 @@ export default function CartPage() {
                     <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest">{item.category}</p>
                     <h3 className="text-base font-black text-white">{item.name}</h3>
                     <p className="text-xs text-white/40 font-bold mt-1">Birim: ₺{item.price.toLocaleString()} <span className="text-[9px]">+ KDV</span></p>
+                    {item.quantity >= 50 && (
+                      <p className="text-[9px] text-green-400 font-black mt-1 uppercase">✓ 50+ adet — %10 indirim uygulandı</p>
+                    )}
                   </div>
                   <div className="flex items-center bg-white/5 rounded-xl border border-white/10 p-1">
                     <button onClick={() => updateQty(item.id, -1)} className="p-1.5 hover:text-amber-500 transition-colors"><Minus size={14} /></button>
@@ -117,14 +121,53 @@ export default function CartPage() {
               ))}
             </div>
 
+            {/* ÖDEME ÖZETİ */}
             <div className="bg-black/30 backdrop-blur-3xl rounded-[2.5rem] border border-amber-500/20 p-10 shadow-2xl h-fit sticky top-32">
               <h2 className="text-lg font-black text-white uppercase mb-8 flex items-center gap-3"><CreditCard className="text-amber-500" size={20} /> Ödeme Özeti</h2>
               <div className="space-y-4 text-[11px] font-black uppercase tracking-widest">
-                <div className="flex justify-between text-white/40"><span>Ara Toplam (KDV Hariç)</span><span>₺{subTotal.toLocaleString()}</span></div>
-                <div className="flex justify-between text-white/40"><span>Hesaplanan KDV (%20)</span><span className="text-amber-500/80">₺{tax.toLocaleString()}</span></div>
+
+                {/* Ara Toplam (KDV Hariç) */}
+                <div className="flex justify-between text-white/40">
+                  <span>Ara Toplam (KDV Hariç)</span>
+                  <span>₺{subTotal.toLocaleString()}</span>
+                </div>
+
+                {/* KDV */}
+                <div className="flex justify-between text-white/40">
+                  <span>Hesaplanan KDV (%20)</span>
+                  <span className="text-amber-500/80">₺{tax.toLocaleString()}</span>
+                </div>
+
+                {/* KDV Dahil Toplam */}
+                <div className="flex justify-between text-white/60 border-t border-white/5 pt-4">
+                  <span>KDV Dahil Toplam</span>
+                  <span>₺{subTotalWithTax.toLocaleString()}</span>
+                </div>
+
+                {/* İndirim (varsa) */}
+                {discountAmount > 0 && (
+                  <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-4 space-y-2">
+                    <div className="flex justify-between text-green-400">
+                      <span>Toptan İndirim (%10)</span>
+                      <span>-₺{discountAmount.toLocaleString()}</span>
+                    </div>
+                    <div className="text-[8px] text-green-400/60 normal-case tracking-normal space-y-0.5">
+                      {discountedItems.map(item => (
+                        <p key={item.id}>• {item.name} ({item.quantity} adet)</p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* TOPLAM */}
                 <div className="border-t border-white/10 pt-6 flex justify-between text-xl text-white italic">
                   <span>TOPLAM</span>
-                  <div className="text-right"><span className="text-amber-500 font-mono text-3xl block">₺{grandTotal.toLocaleString()}</span><span className="text-[9px] text-white/20 not-italic tracking-normal">Tüm vergiler dahildir</span></div>
+                  <div className="text-right">
+                    <span className="text-amber-500 font-mono text-3xl block">₺{grandTotal.toLocaleString()}</span>
+                    <span className="text-[9px] text-white/20 not-italic tracking-normal">
+                      {discountAmount > 0 ? 'İndirim uygulandı' : 'Tüm vergiler dahildir'}
+                    </span>
+                  </div>
                 </div>
               </div>
               <Link href="/checkout"><button className="w-full bg-amber-500 text-black py-6 rounded-full font-black uppercase text-[11px] mt-10 shadow-2xl hover:bg-amber-400 transition-all flex items-center justify-center gap-3">Güvenli Ödeme Yap <ChevronRight size={18} /></button></Link>
