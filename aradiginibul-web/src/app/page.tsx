@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, LogOut, Loader2, Store, ShoppingCart, History, Plus, ChevronRight, CreditCard } from 'lucide-react';
+import { Search, LogOut, Loader2, Store, ShoppingCart, History, Plus, ChevronRight, CreditCard, X } from 'lucide-react';
 import api, { getUserEmailFromToken } from '@/lib/api';
 import Link from 'next/link';
 
@@ -21,6 +21,9 @@ export default function DashboardPage() {
   const [quantities, setQuantities] = useState<{ [key: number]: number }>(
     INITIAL_PRODUCTS.reduce((acc, p) => ({ ...acc, [p.id]: 1 }), {})
   );
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   const loadCart = useCallback((id: string) => {
@@ -46,6 +49,17 @@ export default function DashboardPage() {
     checkAuth();
   }, [router, loadCart]);
 
+  // Arama dışına tıklayınca dropdown'ı kapat
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const addToCart = (p: any) => {
     const id = user?.email || "guest";
     const amount = quantities[p.id] || 1;
@@ -56,6 +70,29 @@ export default function DashboardPage() {
       localStorage.setItem(`cartData_${id}`, JSON.stringify(newCart));
       return newCart;
     });
+  };
+
+  // Arama: Girilen harfleri sırasıyla içeren ürünleri filtrele
+  const getFilteredProducts = () => {
+    if (!searchQuery.trim()) return [];
+    const query = searchQuery.toLowerCase();
+    return INITIAL_PRODUCTS.filter(p => {
+      const name = p.name.toLowerCase();
+      let qi = 0;
+      for (let i = 0; i < name.length && qi < query.length; i++) {
+        if (name[i] === query[qi]) qi++;
+      }
+      return qi === query.length;
+    });
+  };
+
+  const filteredProducts = getFilteredProducts();
+
+  // Kullanıcı baş harfleri
+  const getInitials = () => {
+    const f = user?.first_name?.[0] || '';
+    const l = user?.last_name?.[0] || '';
+    return (f + l).toUpperCase() || '?';
   };
 
   const cartTotalWithTax = cart.reduce((sum, item) => sum + (item.price * 1.2 * item.quantity), 0);
@@ -78,13 +115,64 @@ export default function DashboardPage() {
 
       <main className="flex-1">
         <header className="bg-black/20 backdrop-blur-md h-20 flex items-center justify-between px-10 border-b border-white/5 sticky top-0 z-50">
-          <div className="relative hidden md:block w-80 text-white/30"><Search className="absolute left-3 top-2.5 w-4 h-4" /><input type="text" placeholder="Hızlı ürün ara..." className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-xs outline-none focus:border-amber-500" /></div>
+          {/* ARAMA ÇUBUĞU */}
+          <div ref={searchRef} className="relative hidden md:block w-80">
+            <Search className="absolute left-3 top-2.5 w-4 h-4 text-white/30" />
+            <input
+              type="text"
+              placeholder="Hızlı ürün ara..."
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true); }}
+              onFocus={() => setSearchOpen(true)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-10 text-xs text-white outline-none focus:border-amber-500 placeholder:text-white/30"
+            />
+            {searchQuery && (
+              <button onClick={() => { setSearchQuery(''); setSearchOpen(false); }} className="absolute right-3 top-2.5 text-white/30 hover:text-white">
+                <X size={14} />
+              </button>
+            )}
+
+            {/* ARAMA SONUÇLARI DROPDOWN */}
+            {searchOpen && searchQuery.trim() && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-black/90 backdrop-blur-3xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl max-h-80 overflow-y-auto z-[100]">
+                {filteredProducts.length === 0 ? (
+                  <div className="p-6 text-center text-white/20 text-xs italic">Sonuç bulunamadı</div>
+                ) : (
+                  filteredProducts.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => {
+                        addToCart(p);
+                        setSearchQuery('');
+                        setSearchOpen(false);
+                      }}
+                      className="w-full flex items-center gap-4 p-4 hover:bg-amber-500/10 transition-colors border-b border-white/5 last:border-0 text-left"
+                    >
+                      <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-xl flex-shrink-0">{p.image}</div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest">{p.category}</p>
+                        <p className="text-xs font-black text-white truncate">{p.name}</p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-sm font-black text-white font-mono">₺{p.price.toLocaleString()}</p>
+                        <p className="text-[8px] text-amber-500/80 font-bold">+ KDV</p>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* KULLANICI BİLGİ + AVATAR */}
           <div className="flex items-center gap-4 text-right">
             <div>
               <p className="text-sm font-black text-white">{user?.first_name} {user?.last_name}</p>
               <p className="text-[9px] text-amber-500 font-black uppercase tracking-widest">{user?.company_name}</p>
             </div>
-            <div className="w-10 h-10 bg-white/10 border border-white/20 rounded-xl flex items-center justify-center text-amber-500 font-black">{user?.first_name?.[0]}</div>
+            <div className="w-10 h-10 bg-amber-500/20 border border-amber-500/40 rounded-xl flex items-center justify-center text-amber-500 font-black text-sm">
+              {getInitials()}
+            </div>
           </div>
         </header>
 
@@ -98,9 +186,7 @@ export default function DashboardPage() {
                   <span className="text-[8px] font-black text-amber-500 uppercase">{p.category}</span>
                   <h3 className="text-sm font-black text-white h-10 overflow-hidden leading-tight">{p.name}</h3>
                   <div className="space-y-1">
-                    {/* ✅ KDV HARİÇ FİYAT */}
                     <p className="text-lg font-black text-white tracking-tighter font-mono leading-none">₺{p.price.toLocaleString()} <span className="text-[9px] text-white/30 ml-1 font-bold italic">+ KDV</span></p>
-                    {/* ✅ KDV DAHİL FİYAT (Ödenecek Net Tutar) */}
                     <p className="text-[11px] font-black text-amber-500/90 tracking-tight italic">₺{(p.price * 1.2).toLocaleString()} <span className="text-[8px] opacity-60 ml-1 uppercase font-bold">KDV Dahil</span></p>
                   </div>
                 </div>
@@ -112,7 +198,7 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          {/* ✅ ALT ÖZET TABLOSU */}
+          {/* ALT ÖZET TABLOSU */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-10 border-t border-white/10 mt-12">
             <div className="bg-black/20 p-8 rounded-[2.5rem] border border-white/5 shadow-lg">
               <p className="text-[9px] font-black uppercase text-white/30 mb-4">Cari Limitiniz</p>
@@ -127,13 +213,13 @@ export default function DashboardPage() {
               <Link href="/cart"><button className="w-full bg-amber-500 text-black py-6 rounded-full font-black uppercase text-[11px] mt-10 shadow-2xl hover:bg-amber-400 transition-all flex items-center justify-center gap-3">Sepete Git <ChevronRight size={18} /></button></Link>
             </div>
             <div className="bg-black/20 p-8 rounded-[2.5rem] border border-white/5 shadow-lg text-right">
-              <p className="text-[9px] font-black uppercase text-white/30 mb-4 uppercase">Samsun Merkez</p>
+              <p className="text-[9px] font-black uppercase text-white/30 mb-4">Samsun Merkez</p>
               <h3 className="text-2xl font-black text-white tracking-tighter">Lojistik Hazır</h3>
             </div>
           </div>
         </div>
 
-        {/* ✅ DÜZELTİLMİŞ WHATSAPP BUTONU (Encoded Link) */}
+        {/* WHATSAPP BUTONU */}
         <a
           href="https://wa.me/905389725055?text=Merhaba%2C%20%C3%BCr%C3%BCnleriniz%20ve%20%C3%B6deme%20y%C3%B6ntemleriniz%20hakk%C4%B1nda%20bilgi%20alabilir%20miyim%3F"
           target="_blank"

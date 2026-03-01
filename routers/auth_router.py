@@ -20,7 +20,13 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     
     # 2. Şifreyi şifreleme motoruna (Bcrypt) gönder ve gizli halini kaydet
     hashed_password = auth.get_password_hash(user.password)
-    new_user = models.User(email=user.email, hashed_password=hashed_password)
+    new_user = models.User(
+        email=user.email,
+        hashed_password=hashed_password,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        phone=user.phone
+    )
     
     db.add(new_user)
     db.commit()
