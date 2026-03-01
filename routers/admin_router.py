@@ -36,9 +36,9 @@ class UserRoleUpdate(BaseModel):
 @router.get("/dashboard")
 def get_dashboard(db: Session = Depends(get_db), admin: models.User = Depends(auth.get_admin_user)):
     total_users = db.query(func.count(models.User.id)).scalar()
-    total_orders = db.query(func.count(models.Order.id)).scalar()
+    total_orders = db.query(func.count(models.Order.id)).filter(models.Order.current_status != "İptal Edildi").scalar()
     total_products = db.query(func.count(models.Product.id)).scalar()
-    total_revenue = db.query(func.coalesce(func.sum(models.Order.total_price), 0)).scalar()
+    total_revenue = db.query(func.coalesce(func.sum(models.Order.total_price), 0)).filter(models.Order.current_status != "İptal Edildi").scalar()
 
     # Son 5 sipariş
     recent_orders = db.query(models.Order).order_by(models.Order.created_at.desc()).limit(5).all()
@@ -125,7 +125,12 @@ def get_all_orders(db: Session = Depends(get_db), admin: models.User = Depends(a
             "product_name": item.product.name if item.product else "Silinmiş Ürün",
             "quantity": item.quantity,
             "unit_price": item.unit_price
-        } for item in o.items]
+        } for item in o.items],
+        "history": [{
+            "status": h.status,
+            "created_at": str(h.created_at),
+            "notes": h.notes
+        } for h in sorted(o.history, key=lambda x: x.created_at)]
     } for o in orders]
 
 @router.put("/orders/{order_id}/status")
@@ -133,6 +138,18 @@ def update_order_status(order_id: int, status_data: OrderStatusUpdate, db: Sessi
     order = db.query(models.Order).filter(models.Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Sipariş bulunamadı.")
+    
+    # İptal edilen siparişin durumu tekrar değiştirilemez
+    if order.current_status == "İptal Edildi":
+        raise HTTPException(status_code=400, detail="İptal edilmiş sipariş güncellenemez.")
+    
+    # İptal durumunda stokları geri yükle
+    if status_data.status == "İptal Edildi":
+        for item in order.items:
+            product = db.query(models.Product).filter(models.Product.id == item.product_id).first()
+            if product:
+                product.stock_quantity += item.quantity
+    
     order.current_status = status_data.status
     # Tarihçeye kayıt ekle
     history = models.OrderHistory(

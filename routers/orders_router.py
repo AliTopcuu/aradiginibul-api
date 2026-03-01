@@ -6,6 +6,28 @@ from database import get_db
 
 router = APIRouter(prefix="/orders", tags=["Sipariş & İşlem Motoru"])
 
+# Müşterinin kendi siparişlerini görüntülemesi
+@router.get("/")
+def get_my_orders(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    orders = db.query(models.Order).filter(models.Order.user_id == current_user.id).order_by(models.Order.created_at.desc()).all()
+    return [{
+        "id": o.id,
+        "total_price": o.total_price,
+        "status": o.current_status,
+        "created_at": str(o.created_at),
+        "items": [{
+            "product_id": item.product_id,
+            "product_name": item.product.name if item.product else "Silinmiş Ürün",
+            "quantity": item.quantity,
+            "unit_price": item.unit_price
+        } for item in o.items],
+        "history": [{
+            "status": h.status,
+            "created_at": str(h.created_at),
+            "notes": h.notes
+        } for h in sorted(o.history, key=lambda x: x.created_at)]
+    } for o in orders]
+
 @router.post("/", response_model=schemas.OrderResponse, status_code=status.HTTP_201_CREATED)
 def create_order(
     order_req: schemas.OrderCreate, 
@@ -13,7 +35,7 @@ def create_order(
     current_user: models.User = Depends(auth.get_current_user)
 ):
     # 1. Sipariş Başlığını Oluştur
-    new_order = models.Order(user_id=current_user.id, total_price=0.0, current_status="pending")
+    new_order = models.Order(user_id=current_user.id, total_price=0.0, current_status="Hazırlanıyor")
     db.add(new_order)
     db.flush() # DİKKAT: flush(), veritabanına geçici yazar (ID almak için). Henüz commit etmedik!
 
@@ -61,7 +83,7 @@ def create_order(
     
     history_entry = models.OrderHistory(
         order_id=new_order.id,
-        status="Bekliyor",
+        status="Hazırlanıyor",
         notes="Sipariş başarıyla alındı ve stoklar rezerve edildi."
     )
     db.add(history_entry)

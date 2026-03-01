@@ -124,17 +124,15 @@ export default function DashboardPage() {
     });
   };
 
-  // Arama: Girilen harfleri sırasıyla içeren ürünleri filtrele
+  // Arama: Ürün adı veya açıklamasında arama
   const getFilteredProducts = () => {
     if (!searchQuery.trim()) return [];
     const query = searchQuery.toLowerCase();
     return products.filter(p => {
       const name = p.name.toLowerCase();
-      let qi = 0;
-      for (let i = 0; i < name.length && qi < query.length; i++) {
-        if (name[i] === query[qi]) qi++;
-      }
-      return qi === query.length;
+      const category = (p.category || '').toLowerCase();
+      const sku = (p.sku || '').toLowerCase();
+      return name.includes(query) || category.includes(query) || sku.includes(query);
     });
   };
 

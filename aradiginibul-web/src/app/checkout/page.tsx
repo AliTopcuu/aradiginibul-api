@@ -55,41 +55,45 @@ export default function CheckoutPage() {
     setCardData({ ...cardData, expiry: v.substring(0, 5) });
   };
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
     if (cardData.number.length < 19 || cardData.expiry.length < 5 || cardData.cvc.length < 3) {
       alert("Lütfen bilgileri eksiksiz doldurun."); return;
     }
     setIsProcessing(true);
-    const randomID = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const newOrderNo = `ORD-2026-${randomID}`;
+    const userId = user?.email || "guest";
 
-    setTimeout(() => {
-      const userId = user?.email || "guest";
-
-      // ✅ Siparişi Mühürlü Kaydet
-      const ordersKey = `orders_${userId}`;
-      const existingOrders = JSON.parse(localStorage.getItem(ordersKey) || '[]');
+    try {
+      // Sepet verilerini al
       const savedCart = JSON.parse(localStorage.getItem(`cartData_${userId}`) || '[]');
-      const newOrder = {
-        id: newOrderNo,
-        date: new Date().toLocaleDateString('tr-TR'),
-        total: cartTotal,
-        status: 'Hazırlanıyor',
-        items: savedCart
-      };
-      localStorage.setItem(ordersKey, JSON.stringify([newOrder, ...existingOrders]));
+      if (savedCart.length === 0) {
+        alert("Sepetiniz boş!"); setIsProcessing(false); return;
+      }
 
+      // Backend'e sipariş gönder
+      const orderItems = savedCart.map((item: any) => ({
+        product_id: item.id,
+        quantity: item.quantity
+      }));
+
+      const res = await api.post('/orders/', { items: orderItems });
+      const orderId = res.data?.id || 'N/A';
+
+      // Kartı kaydet (isteğe bağlı)
       if (saveCard) {
         const cardKey = `savedCards_${userId}`;
         const existingCards = JSON.parse(localStorage.getItem(cardKey) || '[]');
         localStorage.setItem(cardKey, JSON.stringify([...existingCards, { id: Date.now(), ...cardData }]));
       }
 
-      setOrderNumber(newOrderNo);
+      setOrderNumber(`SİPARİŞ #${orderId}`);
       setIsProcessing(false);
       setIsSuccess(true);
       localStorage.removeItem(`cartData_${userId}`);
-    }, 2500);
+    } catch (err: any) {
+      setIsProcessing(false);
+      const msg = err.response?.data?.detail || "Sipariş oluşturulamadı. Lütfen tekrar deneyin.";
+      alert(`Hata: ${msg}`);
+    }
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#1a0005]"><Loader2 className="animate-spin text-amber-500 w-12 h-12" /></div>;
