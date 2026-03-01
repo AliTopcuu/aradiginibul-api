@@ -15,7 +15,7 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       const formData = new FormData();
       formData.append('username', email);
@@ -24,9 +24,15 @@ export default function LoginPage() {
       const response = await api.post('/auth/login', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      
+
       localStorage.setItem('token', response.data.access_token);
-      window.location.href = "/";
+      // Token'dan rolü kontrol et — admin ise /admin'e yönlendir
+      try {
+        const payload = JSON.parse(atob(response.data.access_token.split('.')[1]));
+        window.location.href = payload.role === 'admin' ? '/admin' : '/';
+      } catch {
+        window.location.href = '/';
+      }
     } catch (error: any) {
       // Hata mesajını daha kullanıcı dostu ve okunaklı hale getirdik
       const detail = error.response?.data?.detail;
@@ -37,12 +43,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div 
+    <div
       onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
       className="relative min-h-screen w-full flex items-center justify-center overflow-hidden font-sans bg-slate-950"
     >
       {/* 🌊 EKSTRA PARLAK MOUSE IŞIĞI */}
-      <div 
+      <div
         className="pointer-events-none absolute inset-0 z-10 transition-opacity duration-300"
         style={{
           background: `radial-gradient(1100px circle at ${mousePos.x}px ${mousePos.y}px, rgba(37, 99, 23, 0.6), transparent 80%)`
@@ -73,12 +79,12 @@ export default function LoginPage() {
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">E-POSTA</label>
               <div className="relative">
                 <Mail className="absolute left-4 top-4 text-slate-500 w-5 h-5 group-focus-within:text-emerald-400 transition-colors" />
-                <input 
+                <input
                   type="email" required value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="ali@ornek.com"
                   // Placeholder rengi beyaza (şeffaf beyaz) çekildi ve metin netleştirildi
-                  className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all text-white placeholder:text-white/70 font-medium" 
+                  className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all text-white placeholder:text-white/70 font-medium"
                 />
               </div>
             </div>
@@ -87,16 +93,16 @@ export default function LoginPage() {
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">ŞİFRE</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-4 text-slate-500 w-5 h-5 group-focus-within:text-emerald-400 transition-colors" />
-                <input 
+                <input
                   type={showPassword ? "text" : "password"} required value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   // Placeholder rengi beyaza (şeffaf beyaz) çekildi
-                  className="w-full pl-12 pr-12 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-white placeholder:text-white/70 font-medium" 
+                  className="w-full pl-12 pr-12 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-white placeholder:text-white/70 font-medium"
                 />
-                <button 
-                  type="button" 
-                  onClick={() => setShowPassword(!showPassword)} 
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-4 text-slate-500 hover:text-blue-400 transition-colors"
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -104,7 +110,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <button 
+            <button
               disabled={loading}
               className="w-full bg-green-400 text-white py-4 rounded-2xl font-black flex items-center justify-center gap-2  active:scale-[0.98] transition-all shadow-xl shadow-emerald-500/20 disabled:bg-slate-800"
             >

@@ -11,6 +11,7 @@ from routers.users_router import router as users_router
 from routers.orders_router import router as orders_router
 from routers.reviews_router import router as reviews_router
 from routers.analytics_router import router as analytics_router
+from routers.admin_router import router as admin_router
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -32,6 +33,19 @@ def run_migrations():
 
 run_migrations()
 
+# Admin hesabını kontrol et ve rolünü güncelle
+def seed_admin():
+    from database import SessionLocal
+    try:
+        db = SessionLocal()
+        db.execute(text("UPDATE users SET role = 'admin' WHERE email = 'admin@aradiginibul.com'"))
+        db.commit()
+        db.close()
+    except Exception:
+        pass
+
+seed_admin()
+
 app = FastAPI(
     title="AradığınıBul API - AUT Market Edition",
     description="Toptan ve Perakende e-ticaret altyapısı, B2B sipariş motoru.",
@@ -52,6 +66,7 @@ app.include_router(users_router)
 app.include_router(orders_router)
 app.include_router(reviews_router)
 app.include_router(analytics_router)
+app.include_router(admin_router)
 
 @app.get("/")
 def read_root():
