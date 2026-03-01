@@ -39,6 +39,7 @@ class ProductBase(BaseModel):
     price: float
     stock_quantity: int
     sku: Optional[str] = None # Barkod/QR Numarası
+    image_url: Optional[str] = None # Ürün resmi URL'si
 
 class ProductCreate(ProductBase):
     pass

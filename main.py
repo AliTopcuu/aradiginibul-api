@@ -22,6 +22,7 @@ def run_migrations():
         ("users", "first_name", "VARCHAR"),
         ("users", "last_name", "VARCHAR"),
         ("users", "phone", "VARCHAR"),
+        ("products", "image_url", "VARCHAR"),
     ]
     with engine.connect() as conn:
         for table, column, col_type in new_columns:

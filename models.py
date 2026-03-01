@@ -40,6 +40,7 @@ class Product(Base):
     price = Column(Float, nullable=False)
     stock_quantity = Column(Integer, default=0)
     sku = Column(String, unique=True, index=True) # Barkod veya Orijinal Ürün Kodu (OEM)
+    image_url = Column(String, nullable=True) # Ürün resmi URL'si
     
     # İlişkiler
     order_items = relationship("OrderItem", back_populates="product")

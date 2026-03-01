@@ -73,7 +73,7 @@ export default function DashboardPage() {
           price: p.price,
           stock: p.stock_quantity,
           category: getProductCategory(p.description, p.name),
-          image: getProductEmoji(p.name),
+          image: p.image_url || null,
           sku: p.sku,
         }));
         setProducts(mapped);
@@ -188,7 +188,9 @@ export default function DashboardPage() {
                       }}
                       className="w-full flex items-center gap-4 p-4 hover:bg-amber-500/10 transition-colors border-b border-white/5 last:border-0 text-left"
                     >
-                      <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-xl flex-shrink-0">{p.image}</div>
+                      <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {p.image ? <img src={p.image} alt={p.name} className="w-full h-full object-cover" /> : <span className="text-xl">📦</span>}
+                      </div>
                       <div className="flex-1 min-w-0">
                         <p className={`text-[9px] font-black ${theme.accent} uppercase tracking-widest`}>{p.category}</p>
                         <p className="text-xs font-black text-white truncate">{p.name}</p>
@@ -220,7 +222,7 @@ export default function DashboardPage() {
         </header>
 
         <div className="p-10 max-w-7xl mx-auto pb-20">
-          <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter mb-10">Pazar Yeri</h2>
+          <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter mb-10">Ürünler</h2>
 
           {products.length === 0 ? (
             <div className={`${theme.card} backdrop-blur-2xl rounded-[2.5rem] border p-20 text-center`}>
@@ -230,7 +232,9 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
               {products.map((p) => (
                 <div key={p.id} className={`${theme.card} backdrop-blur-2xl rounded-[2.5rem] border p-6 hover:${theme.accentBorder} transition-all flex flex-col shadow-xl group`}>
-                  <div className="aspect-square bg-white/5 rounded-2xl flex items-center justify-center text-5xl mb-6 group-hover:scale-105 transition-transform">{p.image}</div>
+                  <div className="aspect-square bg-white/5 rounded-2xl flex items-center justify-center overflow-hidden mb-6 group-hover:scale-105 transition-transform">
+                    {p.image ? <img src={p.image} alt={p.name} className="w-full h-full object-cover" /> : <span className="text-5xl">📦</span>}
+                  </div>
                   <div className="flex-1 space-y-2">
                     <span className={`text-[8px] font-black ${theme.accent} uppercase`}>{p.category}</span>
                     <h3 className="text-sm font-black text-white h-10 overflow-hidden leading-tight">{p.name}</h3>

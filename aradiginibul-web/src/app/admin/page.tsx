@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Users, ShoppingCart, Package, BarChart3, Trash2, LogOut, Loader2, Moon, Sun, RefreshCw, Plus, Save, ChevronDown, Shield } from 'lucide-react';
+import { Users, ShoppingCart, Package, BarChart3, Trash2, LogOut, Loader2, Moon, Sun, RefreshCw, Plus, Save, ChevronDown, Shield, Upload, ImageIcon } from 'lucide-react';
 import api from '@/lib/api';
 import { useDarkMode } from '@/lib/useDarkMode';
 
@@ -18,10 +18,49 @@ export default function AdminPage() {
     const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
     const [editingProduct, setEditingProduct] = useState<number | null>(null);
     const [editForm, setEditForm] = useState<any>({});
-    const [newProduct, setNewProduct] = useState({ name: '', description: '', price: 0, stock_quantity: 0, sku: '' });
+    const [newProduct, setNewProduct] = useState({ name: '', description: '', price: 0, stock_quantity: 0, sku: '', image_url: '' });
     const [showAddProduct, setShowAddProduct] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const editFileInputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
     const theme = useDarkMode();
+
+    // Resmi sıkıştır ve base64'e çevir
+    const compressImage = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX = 400;
+                    let w = img.width, h = img.height;
+                    if (w > h) { if (w > MAX) { h = h * MAX / w; w = MAX; } }
+                    else { if (h > MAX) { w = w * MAX / h; h = MAX; } }
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d')!;
+                    ctx.drawImage(img, 0, 0, w, h);
+                    resolve(canvas.toDataURL('image/jpeg', 0.7));
+                };
+                img.onerror = reject;
+                img.src = e.target?.result as string;
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const handleImageUpload = async (file: File, target: 'new' | 'edit') => {
+        try {
+            const base64 = await compressImage(file);
+            if (target === 'new') {
+                setNewProduct(prev => ({ ...prev, image_url: base64 }));
+            } else {
+                setEditForm((prev: any) => ({ ...prev, image_url: base64 }));
+            }
+        } catch { alert('Resim yüklenemedi.'); }
+    };
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -77,26 +116,26 @@ export default function AdminPage() {
         try {
             await api.delete(`/admin/users/${id}`);
             setUsers(users.filter(u => u.id !== id));
-        } catch (err: any) { alert(err.response?.data?.detail || 'Hata oluştu.'); }
+        } catch (err: any) { alert(getErrorMessage(err)); }
     };
 
     const updateUserRole = async (id: number, role: string) => {
         try {
             await api.put(`/admin/users/${id}/role`, { role });
             setUsers(users.map(u => u.id === id ? { ...u, role } : u));
-        } catch (err: any) { alert(err.response?.data?.detail || 'Hata oluştu.'); }
+        } catch (err: any) { alert(getErrorMessage(err)); }
     };
 
     const updateOrderStatus = async (id: number, status: string) => {
         try {
             await api.put(`/admin/orders/${id}/status`, { status });
             setOrders(orders.map(o => o.id === id ? { ...o, status } : o));
-        } catch (err: any) { alert(err.response?.data?.detail || 'Hata oluştu.'); }
+        } catch (err: any) { alert(getErrorMessage(err)); }
     };
 
     const startEditProduct = (p: any) => {
         setEditingProduct(p.id);
-        setEditForm({ name: p.name, description: p.description || '', price: p.price, stock_quantity: p.stock_quantity, sku: p.sku || '' });
+        setEditForm({ name: p.name, description: p.description || '', price: p.price, stock_quantity: p.stock_quantity, sku: p.sku || '', image_url: p.image_url || '' });
     };
 
     const saveProduct = async (id: number) => {
@@ -104,7 +143,7 @@ export default function AdminPage() {
             await api.put(`/admin/products/${id}`, editForm);
             setEditingProduct(null);
             loadProducts();
-        } catch (err: any) { alert(err.response?.data?.detail || 'Hata oluştu.'); }
+        } catch (err: any) { alert(getErrorMessage(err)); }
     };
 
     const deleteProduct = async (id: number) => {
@@ -112,16 +151,27 @@ export default function AdminPage() {
         try {
             await api.delete(`/admin/products/${id}`);
             setProducts(products.filter(p => p.id !== id));
-        } catch (err: any) { alert(err.response?.data?.detail || 'Hata oluştu.'); }
+        } catch (err: any) { alert(getErrorMessage(err)); }
+    };
+
+    const getErrorMessage = (err: any) => {
+        const data = err.response?.data;
+        if (!data) return 'Sunucuya bağlanılamadı.';
+        if (typeof data.detail === 'string') return data.detail;
+        if (Array.isArray(data.detail)) return data.detail.map((e: any) => e.msg || e.message || JSON.stringify(e)).join(', ');
+        return JSON.stringify(data);
     };
 
     const addProduct = async () => {
+        if (!newProduct.name.trim()) { alert('Ürün adı gerekli!'); return; }
+        if (newProduct.price <= 0) { alert('Fiyat 0\'dan büyük olmalı!'); return; }
         try {
             await api.post('/products', newProduct);
-            setNewProduct({ name: '', description: '', price: 0, stock_quantity: 0, sku: '' });
+            setNewProduct({ name: '', description: '', price: 0, stock_quantity: 0, sku: '', image_url: '' });
             setShowAddProduct(false);
             loadProducts();
-        } catch (err: any) { alert(err.response?.data?.detail || 'Hata oluştu.'); }
+            alert('✅ Ürün başarıyla eklendi!');
+        } catch (err: any) { alert('Ürün eklenemedi: ' + getErrorMessage(err)); }
     };
 
     if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]"><Loader2 className="animate-spin text-red-500 w-12 h-12" /></div>;
@@ -360,7 +410,14 @@ export default function AdminPage() {
                                     <input placeholder="SKU" value={newProduct.sku} onChange={e => setNewProduct({ ...newProduct, sku: e.target.value })} className="bg-white/5 border border-white/10 rounded-xl p-3 text-xs text-white outline-none focus:border-red-500" />
                                     <input type="number" placeholder="Fiyat" value={newProduct.price || ''} onChange={e => setNewProduct({ ...newProduct, price: parseFloat(e.target.value) || 0 })} className="bg-white/5 border border-white/10 rounded-xl p-3 text-xs text-white outline-none focus:border-red-500" />
                                     <input type="number" placeholder="Stok" value={newProduct.stock_quantity || ''} onChange={e => setNewProduct({ ...newProduct, stock_quantity: parseInt(e.target.value) || 0 })} className="bg-white/5 border border-white/10 rounded-xl p-3 text-xs text-white outline-none focus:border-red-500" />
-                                    <button onClick={addProduct} className="bg-red-500 text-white rounded-xl font-black text-[10px] uppercase hover:bg-red-400 transition-all flex items-center justify-center gap-2"><Plus size={14} /> Ekle</button>
+                                    <div className="flex items-center gap-3">
+                                        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) handleImageUpload(e.target.files[0], 'new'); }} />
+                                        <button onClick={() => fileInputRef.current?.click()} className="flex-1 bg-white/5 border border-white/10 rounded-xl p-3 text-xs text-white/40 hover:border-red-500 transition-all flex items-center gap-2 cursor-pointer">
+                                            <Upload size={14} /> {newProduct.image_url ? 'Resim Seçildi ✓' : 'Resim Yükle'}
+                                        </button>
+                                        {newProduct.image_url && <img src={newProduct.image_url} alt="" className="w-10 h-10 rounded-lg object-cover border border-white/10" />}
+                                    </div>
+                                    <button onClick={addProduct} className="bg-red-500 text-white rounded-xl font-black text-[10px] uppercase hover:bg-red-400 transition-all flex items-center justify-center gap-2 md:col-span-3"><Plus size={14} /> Ekle</button>
                                 </div>
                             </div>
                         )}
@@ -370,13 +427,20 @@ export default function AdminPage() {
                             <table className="w-full text-left">
                                 <thead>
                                     <tr className="border-b border-white/5 bg-white/5 text-red-400 text-[10px] font-black uppercase">
-                                        <th className="p-5">ID</th><th className="p-5">Ürün Adı</th><th className="p-5">Fiyat</th><th className="p-5">Stok</th><th className="p-5">SKU</th><th className="p-5">İşlem</th>
+                                        <th className="p-5">ID</th><th className="p-5">Resim</th><th className="p-5">Ürün Adı</th><th className="p-5">Fiyat</th><th className="p-5">Stok</th><th className="p-5">SKU</th><th className="p-5">İşlem</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {products.map(p => (
                                         <tr key={p.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                                             <td className="p-5 font-mono text-xs font-black">{p.id}</td>
+                                            <td className="p-5">
+                                                {p.image_url ? (
+                                                    <img src={p.image_url} alt={p.name} className="w-10 h-10 rounded-lg object-cover" />
+                                                ) : (
+                                                    <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center text-white/20 text-lg">📦</div>
+                                                )}
+                                            </td>
                                             <td className="p-5">
                                                 {editingProduct === p.id ? (
                                                     <input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-xs text-white outline-none w-full" />
@@ -402,7 +466,11 @@ export default function AdminPage() {
                                             <td className="p-5">
                                                 <div className="flex items-center gap-2">
                                                     {editingProduct === p.id ? (
-                                                        <button onClick={() => saveProduct(p.id)} className="text-green-400 hover:text-green-300 transition-colors"><Save size={16} /></button>
+                                                        <>
+                                                            <input ref={editFileInputRef} type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) handleImageUpload(e.target.files[0], 'edit'); }} />
+                                                            <button onClick={() => editFileInputRef.current?.click()} className="text-white/20 hover:text-purple-400 transition-colors" title="Resim değiştir"><ImageIcon size={16} /></button>
+                                                            <button onClick={() => saveProduct(p.id)} className="text-green-400 hover:text-green-300 transition-colors"><Save size={16} /></button>
+                                                        </>
                                                     ) : (
                                                         <button onClick={() => startEditProduct(p)} className="text-white/20 hover:text-blue-400 transition-colors text-[9px] font-black uppercase bg-white/5 px-3 py-1.5 rounded-lg">Düzenle</button>
                                                     )}

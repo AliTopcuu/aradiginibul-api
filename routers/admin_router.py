@@ -27,6 +27,7 @@ class ProductUpdate(BaseModel):
     price: Optional[float] = None
     stock_quantity: Optional[int] = None
     sku: Optional[str] = None
+    image_url: Optional[str] = None
 
 class UserRoleUpdate(BaseModel):
     role: str
