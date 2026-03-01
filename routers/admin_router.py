@@ -160,6 +160,8 @@ def update_product(product_id: int, product_data: ProductUpdate, db: Session = D
         product.stock_quantity = product_data.stock_quantity
     if product_data.sku is not None:
         product.sku = product_data.sku
+    if product_data.image_url is not None:
+        product.image_url = product_data.image_url
     db.commit()
     db.refresh(product)
     return {"mesaj": "Ürün güncellendi.", "urun": {"id": product.id, "name": product.name, "price": product.price, "stock_quantity": product.stock_quantity}}

@@ -9,9 +9,21 @@ import { useDarkMode } from '@/lib/useDarkMode';
 
 // SKU veya isme göre emoji eşleştirmesi
 const EMOJI_MAP: { [key: string]: string } = {
-  'rulman': '⚙️', 'motor': '⚡', 'kumpas': '📏', 'dişli': '🔩', 'lazer': '🔴',
-  'vida': '🔧', 'kaynak': '🔥', 'pompa': '💧', 'filtre': '🧹', 'kablo': '🔌',
-  'sensör': '📡', 'kompresör': '💨', 'vana': '🚰', 'pnömatik': '🏗️', 'hidrolik': '🛢️',
+  'piston': '🔧', 'silindir': '🔧', 'krank': '⚙️', 'eksantrik': '⚙️', 'supap': '🔩', 'segman': '🔩',
+  'motor': '⚡', 'pompa': '💧', 'fren': '🛑', 'balata': '�', 'disk': '�', 'kaliper': '�',
+  'amortisör': '🔄', 'süspansiyon': '🔄', 'rotil': '�', 'salıncak': '🔄', 'yay': '�',
+  'marş': '�', 'alternatör': '🔋', 'buji': '⚡', 'akü': '🔋', 'far': '�', 'sensör': '📡',
+  'debriyaj': '⚙️', 'şanzıman': '⚙️', 'vites': '⚙️', 'aks': '⚙️',
+  'radyatör': '🌡️', 'termostat': '🌡️', 'antifriz': '🌡️', 'soğutma': '🌡️',
+  'egzoz': '💨', 'katalitik': '�', 'susturucu': '💨',
+  'yakıt': '⛽', 'enjektör': '⛽', 'karbüratör': '⛽',
+  'direksiyon': '�', 'rot': '🎯',
+  'filtre': '🧹', 'polen': '🧹',
+  'kayış': '🔗', 'triger': '🔗', 'zincir': '🔗', 'kasnak': '�',
+  'rulman': '⚙️', 'bilya': '⚙️',
+  'conta': '🔘', 'keçe': '🔘',
+  'lamba': '💡', 'sinyal': '💡', 'led': '💡', 'sis': '💡',
+  'tampon': '🚗', 'çamurluk': '🚗', 'kaput': '🚗', 'ayna': '🚗', 'cam': '🚗',
 };
 
 function getProductEmoji(name: string): string {
@@ -66,7 +78,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await api.get('/products');
+        const res = await api.get('/products/');
         const mapped = res.data.map((p: any) => ({
           id: p.id,
           name: p.name,

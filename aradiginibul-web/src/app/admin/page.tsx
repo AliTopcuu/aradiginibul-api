@@ -98,7 +98,7 @@ export default function AdminPage() {
 
     const loadProducts = async () => {
         try {
-            const res = await api.get('/products');
+            const res = await api.get('/products/');
             setProducts(res.data);
         } catch { }
     };
@@ -140,7 +140,11 @@ export default function AdminPage() {
 
     const saveProduct = async (id: number) => {
         try {
-            await api.put(`/admin/products/${id}`, editForm);
+            const updateData = { ...editForm };
+            if (updateData.image_url !== undefined) {
+                // image_url değiştiğinde gönder
+            }
+            await api.put(`/admin/products/${id}`, updateData);
             setEditingProduct(null);
             loadProducts();
         } catch (err: any) { alert(getErrorMessage(err)); }
@@ -166,7 +170,7 @@ export default function AdminPage() {
         if (!newProduct.name.trim()) { alert('Ürün adı gerekli!'); return; }
         if (newProduct.price <= 0) { alert('Fiyat 0\'dan büyük olmalı!'); return; }
         try {
-            await api.post('/products', newProduct);
+            await api.post('/products/', newProduct);
             setNewProduct({ name: '', description: '', price: 0, stock_quantity: 0, sku: '', image_url: '' });
             setShowAddProduct(false);
             loadProducts();
