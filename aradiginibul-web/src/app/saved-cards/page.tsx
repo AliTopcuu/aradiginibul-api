@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CreditCard, Trash2, Store, ShoppingCart, History, LogOut, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import api from '@/lib/api';
+import api, { getUserEmailFromToken } from '@/lib/api';
 
 export default function SavedCardsPage() {
   const [cards, setCards] = useState<any[]>([]);
@@ -16,15 +16,21 @@ export default function SavedCardsPage() {
     const init = async () => {
       const token = localStorage.getItem('token');
       if (!token) { router.push("/login"); return; }
-      const fallbackID = btoa(token).substring(0, 15);
+
+      // JWT token'dan email'i doğrudan çöz (backend'e gerek yok)
+      const tokenEmail = getUserEmailFromToken();
+
       try {
         const res = await api.get('/auth/me');
         setUser(res.data);
-        const data = JSON.parse(localStorage.getItem(`savedCards_${res.data.email}`) || '[]');
+        const userId = res.data.email;
+        const data = JSON.parse(localStorage.getItem(`savedCards_${userId}`) || '[]');
         setCards(data);
       } catch (error) {
-        setUser({ first_name: "Bayi", last_name: "Üyesi", email: fallbackID });
-        const data = JSON.parse(localStorage.getItem(`savedCards_${fallbackID}`) || '[]');
+        // Backend erişilemezse, token'dan çözülen email'i kullan
+        const userId = tokenEmail || "guest";
+        setUser({ first_name: "Bayi", last_name: "Üyesi", email: userId });
+        const data = JSON.parse(localStorage.getItem(`savedCards_${userId}`) || '[]');
         setCards(data);
       } finally { setLoading(false); }
     };
@@ -62,7 +68,7 @@ export default function SavedCardsPage() {
             cards.map(c => (
               <div key={c.id} className="bg-gradient-to-br from-white/10 to-transparent p-10 rounded-[2.5rem] border border-white/10 relative group">
                 <CreditCard className="text-amber-500 mb-8" size={32} />
-                <button onClick={() => deleteCard(c.id)} className="absolute top-10 right-10 text-red-500/30 hover:text-red-500"><Trash2 size={18}/></button>
+                <button onClick={() => deleteCard(c.id)} className="absolute top-10 right-10 text-red-500/30 hover:text-red-500"><Trash2 size={18} /></button>
                 <p className="text-xl font-mono tracking-widest text-white mb-4">{c.number}</p>
                 <div className="flex justify-between border-t border-white/5 pt-6 uppercase text-[8px] font-black text-amber-500">
                   <div><span>Sahibi</span><p className="text-xs text-white/80">{c.holder}</p></div>

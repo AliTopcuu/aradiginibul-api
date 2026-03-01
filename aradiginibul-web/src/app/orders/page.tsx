@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { History, Store, ShoppingCart, CreditCard, LogOut, Loader2, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
-import api from '@/lib/api';
+import api, { getUserEmailFromToken } from '@/lib/api';
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -16,15 +16,20 @@ export default function OrdersPage() {
     const init = async () => {
       const token = localStorage.getItem('token');
       if (!token) { router.push("/login"); return; }
-      const fallbackID = btoa(token).substring(0, 15);
+
+      // JWT token'dan email'i doğrudan çöz
+      const tokenEmail = getUserEmailFromToken();
+
       try {
         const res = await api.get('/auth/me');
         setUser(res.data);
-        const data = JSON.parse(localStorage.getItem(`orders_${res.data.email}`) || '[]');
+        const userId = res.data.email;
+        const data = JSON.parse(localStorage.getItem(`orders_${userId}`) || '[]');
         setOrders(data);
       } catch (error) {
-        setUser({ first_name: "Bayi", last_name: "Üyesi", email: fallbackID });
-        const data = JSON.parse(localStorage.getItem(`orders_${fallbackID}`) || '[]');
+        const userId = tokenEmail || "guest";
+        setUser({ first_name: "Bayi", last_name: "Üyesi", email: userId });
+        const data = JSON.parse(localStorage.getItem(`orders_${userId}`) || '[]');
         setOrders(data);
       } finally { setLoading(false); }
     };

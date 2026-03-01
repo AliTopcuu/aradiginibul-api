@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle2, Loader2, CreditCard, Lock, Calendar, User, Hash, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
-import api from '@/lib/api';
+import api, { getUserEmailFromToken } from '@/lib/api';
 
 export default function CheckoutPage() {
   const [user, setUser] = useState<any>(null);
@@ -22,14 +22,18 @@ export default function CheckoutPage() {
     const checkAuth = async () => {
       const token = localStorage.getItem('token');
       if (!token) { router.push("/login"); return; }
-      const fallbackID = btoa(token).substring(0, 15);
+
+      // JWT token'dan email'i doğrudan çöz
+      const tokenEmail = getUserEmailFromToken();
+
       try {
         const res = await api.get('/auth/me');
         setUser(res.data);
         calculateTotal(res.data.email);
       } catch (error) {
-        setUser({ first_name: "Bayi", last_name: "Üyesi", email: fallbackID });
-        calculateTotal(fallbackID);
+        const userId = tokenEmail || "guest";
+        setUser({ first_name: "Bayi", last_name: "Üyesi", email: userId });
+        calculateTotal(userId);
       } finally { setLoading(false); }
     };
     const calculateTotal = (id: string) => {
@@ -62,7 +66,7 @@ export default function CheckoutPage() {
 
     setTimeout(() => {
       const userId = user?.email || "guest";
-      
+
       // ✅ Siparişi Mühürlü Kaydet
       const ordersKey = `orders_${userId}`;
       const existingOrders = JSON.parse(localStorage.getItem(ordersKey) || '[]');
@@ -103,17 +107,17 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#b8860b] via-[#8b4513] to-[#1a0005] flex items-center justify-center p-10 text-white font-sans">
       <div className="max-w-md w-full bg-black/40 backdrop-blur-3xl p-12 rounded-[3rem] border border-white/10 shadow-2xl">
-         <div className="text-center mb-10"><h1 className="text-2xl font-black italic uppercase tracking-tighter">Güvenli Ödeme</h1><p className="text-amber-500 font-mono text-xl mt-2 font-black">₺{cartTotal.toLocaleString()}</p></div>
-         <div className="space-y-4">
-            <div className="relative"><User className="absolute left-4 top-4 text-white/20" size={18}/><input type="text" placeholder="KART SAHİBİ" onChange={(e) => setCardData({...cardData, holder: e.target.value})} className="w-full bg-white/5 p-4 pl-12 rounded-xl border border-white/10 outline-none focus:border-amber-500 uppercase font-black text-xs" /></div>
-            <div className="relative"><CreditCard className="absolute left-4 top-4 text-white/20" size={18}/><input type="text" value={cardData.number} placeholder="KART NUMARASI" onChange={handleCardNumberChange} className="w-full bg-white/5 p-4 pl-12 rounded-xl border border-white/10 outline-none focus:border-amber-500 font-mono text-sm" /></div>
-            <div className="grid grid-cols-2 gap-4">
-               <div className="relative"><Calendar className="absolute left-4 top-4 text-white/20" size={18}/><input type="text" value={cardData.expiry} placeholder="AA/YY" onChange={handleExpiryChange} className="w-full bg-white/5 p-4 pl-12 rounded-xl border border-white/10 outline-none focus:border-amber-500 font-mono text-xs" /></div>
-               <div className="relative"><Lock className="absolute left-4 top-4 text-white/20" size={18}/><input type="password" placeholder="CVC" onChange={(e) => setCardData({...cardData, cvc: e.target.value})} className="w-full bg-white/5 p-4 pl-12 rounded-xl border border-white/10 outline-none focus:border-amber-500 font-mono text-xs" /></div>
-            </div>
-            <div className="flex items-center gap-3 py-2 cursor-pointer" onClick={() => setSaveCard(!saveCard)}><div className={`w-4 h-4 border rounded ${saveCard ? 'bg-amber-500' : 'border-white/20'}`} /> <span className="text-[9px] font-black uppercase text-white/40">Kartı Kaydet</span></div>
-            <button onClick={handlePayment} disabled={isProcessing} className="w-full bg-amber-500 text-black py-4 rounded-full font-black uppercase text-xs shadow-xl flex items-center justify-center gap-2">{isProcessing ? <Loader2 className="animate-spin" /> : <><ShieldCheck size={16}/> Ödemeyi Tamamla</>}</button>
-         </div>
+        <div className="text-center mb-10"><h1 className="text-2xl font-black italic uppercase tracking-tighter">Güvenli Ödeme</h1><p className="text-amber-500 font-mono text-xl mt-2 font-black">₺{cartTotal.toLocaleString()}</p></div>
+        <div className="space-y-4">
+          <div className="relative"><User className="absolute left-4 top-4 text-white/20" size={18} /><input type="text" placeholder="KART SAHİBİ" onChange={(e) => setCardData({ ...cardData, holder: e.target.value })} className="w-full bg-white/5 p-4 pl-12 rounded-xl border border-white/10 outline-none focus:border-amber-500 uppercase font-black text-xs" /></div>
+          <div className="relative"><CreditCard className="absolute left-4 top-4 text-white/20" size={18} /><input type="text" value={cardData.number} placeholder="KART NUMARASI" onChange={handleCardNumberChange} className="w-full bg-white/5 p-4 pl-12 rounded-xl border border-white/10 outline-none focus:border-amber-500 font-mono text-sm" /></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="relative"><Calendar className="absolute left-4 top-4 text-white/20" size={18} /><input type="text" value={cardData.expiry} placeholder="AA/YY" onChange={handleExpiryChange} className="w-full bg-white/5 p-4 pl-12 rounded-xl border border-white/10 outline-none focus:border-amber-500 font-mono text-xs" /></div>
+            <div className="relative"><Lock className="absolute left-4 top-4 text-white/20" size={18} /><input type="password" placeholder="CVC" onChange={(e) => setCardData({ ...cardData, cvc: e.target.value })} className="w-full bg-white/5 p-4 pl-12 rounded-xl border border-white/10 outline-none focus:border-amber-500 font-mono text-xs" /></div>
+          </div>
+          <div className="flex items-center gap-3 py-2 cursor-pointer" onClick={() => setSaveCard(!saveCard)}><div className={`w-4 h-4 border rounded ${saveCard ? 'bg-amber-500' : 'border-white/20'}`} /> <span className="text-[9px] font-black uppercase text-white/40">Kartı Kaydet</span></div>
+          <button onClick={handlePayment} disabled={isProcessing} className="w-full bg-amber-500 text-black py-4 rounded-full font-black uppercase text-xs shadow-xl flex items-center justify-center gap-2">{isProcessing ? <Loader2 className="animate-spin" /> : <><ShieldCheck size={16} /> Ödemeyi Tamamla</>}</button>
+        </div>
       </div>
     </div>
   );

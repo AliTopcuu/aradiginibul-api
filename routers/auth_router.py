@@ -50,3 +50,8 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     
     # Token'ı teslim et
     return {"access_token": access_token, "token_type": "bearer"}
+
+# Giriş yapmış kullanıcının kendi profil bilgilerini döner
+@router.get("/me", response_model=schemas.UserResponse)
+def get_current_user_info(current_user: models.User = Depends(auth.get_current_user)):
+    return current_user

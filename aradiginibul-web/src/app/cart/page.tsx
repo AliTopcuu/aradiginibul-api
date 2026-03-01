@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Trash2, CreditCard, ShoppingBag, Plus, Minus, Loader2, Store, ShoppingCart, History, LogOut, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
-import api from '@/lib/api';
+import api, { getUserEmailFromToken } from '@/lib/api';
 
 export default function CartPage() {
   const [user, setUser] = useState<any>(null);
@@ -21,15 +21,18 @@ export default function CartPage() {
     const init = async () => {
       const token = localStorage.getItem('token');
       if (!token) { router.push("/login"); return; }
-      const fallbackID = btoa(token).substring(0, 15);
+
+      // JWT token'dan email'i doğrudan çöz
+      const tokenEmail = getUserEmailFromToken();
+
       try {
         const res = await api.get('/auth/me');
         setUser(res.data);
         loadCartData(res.data.email);
       } catch (error) {
-        // Hata durumunda dinamik misafir ismi
-        setUser({ first_name: "Bayi", last_name: "Üyesi", email: fallbackID });
-        loadCartData(fallbackID);
+        const userId = tokenEmail || "guest";
+        setUser({ first_name: "Bayi", last_name: "Üyesi", email: userId });
+        loadCartData(userId);
       } finally { setLoading(false); }
     };
     init();
@@ -76,7 +79,7 @@ export default function CartPage() {
             <SidebarItem icon={<History size={18} />} label="Siparişlerim" />
           </Link>
         </nav>
-        
+
         <button onClick={() => { localStorage.removeItem('token'); router.push("/login"); }} className="flex items-center gap-3 text-white/40 hover:text-red-400 font-bold text-xs pt-6 border-t border-white/10 px-2 uppercase transition-all">
           <LogOut size={16} /> Çıkış Yap
         </button>
@@ -101,9 +104,9 @@ export default function CartPage() {
                     <p className="text-xs text-white/40 font-bold mt-1">Birim: ₺{item.price.toLocaleString()} <span className="text-[9px]">+ KDV</span></p>
                   </div>
                   <div className="flex items-center bg-white/5 rounded-xl border border-white/10 p-1">
-                    <button onClick={() => updateQty(item.id, -1)} className="p-1.5 hover:text-amber-500 transition-colors"><Minus size={14}/></button>
+                    <button onClick={() => updateQty(item.id, -1)} className="p-1.5 hover:text-amber-500 transition-colors"><Minus size={14} /></button>
                     <span className="w-8 text-center font-black text-xs">{item.quantity}</span>
-                    <button onClick={() => updateQty(item.id, 1)} className="p-1.5 hover:text-amber-500 transition-colors"><Plus size={14}/></button>
+                    <button onClick={() => updateQty(item.id, 1)} className="p-1.5 hover:text-amber-500 transition-colors"><Plus size={14} /></button>
                   </div>
                   <div className="text-right min-w-[140px]">
                     <p className="text-lg font-black text-white font-mono leading-none">₺{(item.price * item.quantity * 1.2).toLocaleString()}</p>
