@@ -46,6 +46,31 @@ def seed_admin():
 
 seed_admin()
 
+# Başlangıç ürünlerini veritabanına ekle (yoksa)
+def seed_products():
+    from database import SessionLocal
+    try:
+        db = SessionLocal()
+        existing = db.execute(text("SELECT COUNT(*) FROM products")).scalar()
+        if existing == 0:
+            products = [
+                ("Endüstriyel Rulman Seti", "Yüksek kaliteli endüstriyel rulman seti", 2450, 45, "SKU-RULMAN-001"),
+                ("Yüksek Devirli Motor", "Profesyonel yüksek devirli motor", 18200, 12, "SKU-MOTOR-001"),
+                ("Dijital Kumpas Pro", "Hassas dijital kumpas", 850, 120, "SKU-KUMPAS-001"),
+                ("Çelik Dişli Takımı", "Dayanıklı çelik dişli takımı", 4100, 8, "SKU-DISLI-001"),
+                ("Lazer Hizalama Cihazı", "Profesyonel lazer hizalama cihazı", 12750, 5, "SKU-LAZER-001"),
+            ]
+            for name, desc, price, stock, sku in products:
+                db.execute(text(
+                    "INSERT INTO products (name, description, price, stock_quantity, sku) VALUES (:n, :d, :p, :s, :k)"
+                ), {"n": name, "d": desc, "p": price, "s": stock, "k": sku})
+            db.commit()
+        db.close()
+    except Exception:
+        pass
+
+seed_products()
+
 app = FastAPI(
     title="AradığınıBul API - AUT Market Edition",
     description="Toptan ve Perakende e-ticaret altyapısı, B2B sipariş motoru.",

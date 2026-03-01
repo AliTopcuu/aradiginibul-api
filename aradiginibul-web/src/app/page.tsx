@@ -7,21 +7,32 @@ import api, { getUserEmailFromToken } from '@/lib/api';
 import Link from 'next/link';
 import { useDarkMode } from '@/lib/useDarkMode';
 
-const INITIAL_PRODUCTS = [
-  { id: 1, name: "Endüstriyel Rulman Seti", price: 2450, stock: 45, category: "Yedek Parça", image: "⚙️" },
-  { id: 2, name: "Yüksek Devirli Motor", price: 18200, stock: 12, category: "Makine", image: "⚡" },
-  { id: 3, name: "Dijital Kumpas Pro", price: 850, stock: 120, category: "Ölçüm Aletleri", image: "📏" },
-  { id: 4, name: "Çelik Dişli Takımı", price: 4100, stock: 8, category: "Donanım", image: "🔩" },
-  { id: 5, name: "Lazer Hizalama Cihazı", price: 12750, stock: 5, category: "Optik", image: "🔴" },
-];
+// SKU veya isme göre emoji eşleştirmesi
+const EMOJI_MAP: { [key: string]: string } = {
+  'rulman': '⚙️', 'motor': '⚡', 'kumpas': '📏', 'dişli': '🔩', 'lazer': '🔴',
+  'vida': '🔧', 'kaynak': '🔥', 'pompa': '💧', 'filtre': '🧹', 'kablo': '🔌',
+  'sensör': '📡', 'kompresör': '💨', 'vana': '🚰', 'pnömatik': '🏗️', 'hidrolik': '🛢️',
+};
+
+function getProductEmoji(name: string): string {
+  const lower = name.toLowerCase();
+  for (const [key, emoji] of Object.entries(EMOJI_MAP)) {
+    if (lower.includes(key)) return emoji;
+  }
+  return '📦';
+}
+
+function getProductCategory(description: string | null, name: string): string {
+  if (description) return description;
+  return name.split(' ').slice(-1)[0] || 'Genel';
+}
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<any[]>([]);
   const [cart, setCart] = useState<any[]>([]);
-  const [quantities, setQuantities] = useState<{ [key: number]: number }>(
-    INITIAL_PRODUCTS.reduce((acc, p) => ({ ...acc, [p.id]: 1 }), {})
-  );
+  const [quantities, setQuantities] = useState<{ [key: number]: number }>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -51,6 +62,33 @@ export default function DashboardPage() {
     checkAuth();
   }, [router, loadCart]);
 
+  // Ürünleri API'den çek
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await api.get('/products');
+        const mapped = res.data.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          price: p.price,
+          stock: p.stock_quantity,
+          category: getProductCategory(p.description, p.name),
+          image: getProductEmoji(p.name),
+          sku: p.sku,
+        }));
+        setProducts(mapped);
+        // Miktarları başlat
+        const q: { [key: number]: number } = {};
+        mapped.forEach((p: any) => { q[p.id] = 1; });
+        setQuantities(prev => ({ ...q, ...prev }));
+      } catch {
+        // API erişilemezse boş bırak
+        setProducts([]);
+      }
+    };
+    fetchProducts();
+  }, []);
+
   // Arama dışına tıklayınca dropdown'ı kapat
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -78,7 +116,7 @@ export default function DashboardPage() {
   const getFilteredProducts = () => {
     if (!searchQuery.trim()) return [];
     const query = searchQuery.toLowerCase();
-    return INITIAL_PRODUCTS.filter(p => {
+    return products.filter(p => {
       const name = p.name.toLowerCase();
       let qi = 0;
       for (let i = 0; i < name.length && qi < query.length; i++) {
@@ -182,26 +220,33 @@ export default function DashboardPage() {
         </header>
 
         <div className="p-10 max-w-7xl mx-auto pb-20">
-          <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter mb-10">Ürün Listesi</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
-            {INITIAL_PRODUCTS.map((p) => (
-              <div key={p.id} className={`${theme.card} backdrop-blur-2xl rounded-[2.5rem] border p-6 hover:${theme.accentBorder} transition-all flex flex-col shadow-xl group`}>
-                <div className="aspect-square bg-white/5 rounded-2xl flex items-center justify-center text-5xl mb-6 group-hover:scale-105 transition-transform">{p.image}</div>
-                <div className="flex-1 space-y-2">
-                  <span className={`text-[8px] font-black ${theme.accent} uppercase`}>{p.category}</span>
-                  <h3 className="text-sm font-black text-white h-10 overflow-hidden leading-tight">{p.name}</h3>
-                  <div className="space-y-1">
-                    <p className="text-lg font-black text-white tracking-tighter font-mono leading-none">₺{p.price.toLocaleString()} <span className="text-[9px] text-white/30 ml-1 font-bold italic">+ KDV</span></p>
-                    <p className={`text-[11px] font-black ${theme.accent} tracking-tight italic`}>₺{(p.price * 1.2).toLocaleString()} <span className="text-[8px] opacity-60 ml-1 uppercase font-bold">KDV Dahil</span></p>
+          <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter mb-10">Pazar Yeri</h2>
+
+          {products.length === 0 ? (
+            <div className={`${theme.card} backdrop-blur-2xl rounded-[2.5rem] border p-20 text-center`}>
+              <p className="text-white/20 italic text-sm">Henüz ürün bulunmuyor.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
+              {products.map((p) => (
+                <div key={p.id} className={`${theme.card} backdrop-blur-2xl rounded-[2.5rem] border p-6 hover:${theme.accentBorder} transition-all flex flex-col shadow-xl group`}>
+                  <div className="aspect-square bg-white/5 rounded-2xl flex items-center justify-center text-5xl mb-6 group-hover:scale-105 transition-transform">{p.image}</div>
+                  <div className="flex-1 space-y-2">
+                    <span className={`text-[8px] font-black ${theme.accent} uppercase`}>{p.category}</span>
+                    <h3 className="text-sm font-black text-white h-10 overflow-hidden leading-tight">{p.name}</h3>
+                    <div className="space-y-1">
+                      <p className="text-lg font-black text-white tracking-tighter font-mono leading-none">₺{p.price.toLocaleString()} <span className="text-[9px] text-white/30 ml-1 font-bold italic">+ KDV</span></p>
+                      <p className={`text-[11px] font-black ${theme.accent} tracking-tight italic`}>₺{(p.price * 1.2).toLocaleString()} <span className="text-[8px] opacity-60 ml-1 uppercase font-bold">KDV Dahil</span></p>
+                    </div>
+                  </div>
+                  <div className="mt-6 space-y-3">
+                    <input type="number" min="1" value={quantities[p.id] || 1} onChange={(e) => setQuantities({ ...quantities, [p.id]: parseInt(e.target.value) || 1 })} className={`w-full bg-white/5 border border-white/10 rounded-xl py-2 px-3 text-xs font-black ${theme.accent} outline-none`} />
+                    <button onClick={() => addToCart(p)} className={`w-full ${theme.accentBg} text-black py-3 rounded-xl font-black text-[10px] uppercase ${theme.accentBgHover} active:scale-95 transition-all flex items-center justify-center gap-2`}><Plus size={14} /> Sepete Ekle</button>
                   </div>
                 </div>
-                <div className="mt-6 space-y-3">
-                  <input type="number" min="1" value={quantities[p.id]} onChange={(e) => setQuantities({ ...quantities, [p.id]: parseInt(e.target.value) || 1 })} className={`w-full bg-white/5 border border-white/10 rounded-xl py-2 px-3 text-xs font-black ${theme.accent} outline-none`} />
-                  <button onClick={() => addToCart(p)} className={`w-full ${theme.accentBg} text-black py-3 rounded-xl font-black text-[10px] uppercase ${theme.accentBgHover} active:scale-95 transition-all flex items-center justify-center gap-2`}><Plus size={14} /> Sepete Ekle</button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
           {/* ALT ÖZET TABLOSU */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-10 border-t border-white/10 mt-12">
