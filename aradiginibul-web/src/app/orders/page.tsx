@@ -41,7 +41,7 @@ export default function OrdersPage() {
   return (
     <div className="min-h-screen w-full flex bg-gradient-to-br from-[#b8860b] via-[#8b4513] to-[#1a0005] bg-fixed text-slate-200">
       <aside className="w-64 bg-black/40 backdrop-blur-3xl border-r border-white/5 hidden lg:flex flex-col p-6 sticky top-0 h-screen">
-        <div className="flex items-center gap-3 mb-10 px-2 text-white font-black uppercase italic text-xl">AradığınıBul</div>
+        <Link href="/"><div className="flex items-center gap-3 mb-10 px-2 text-white font-black uppercase italic text-xl cursor-pointer hover:text-amber-400 transition-colors">AradığınıBul</div></Link>
         <nav className="space-y-2 flex-1">
           <Link href="/"><SidebarItem icon={<Store size={18} />} label="Ürün Marketi" /></Link>
           <Link href="/cart"><SidebarItem icon={<ShoppingCart size={18} />} label="Sepetim" /></Link>
