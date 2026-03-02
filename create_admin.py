@@ -16,7 +16,7 @@ def create_admin():
     db = SessionLocal()
     
     email = "admin@aradiginibul.com"
-    password = "admin123"
+    password = "admin12356890.!"
     
     # Zaten var mı kontrol et
     existing = db.query(User).filter(User.email == email).first()

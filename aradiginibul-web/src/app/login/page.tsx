@@ -100,13 +100,7 @@ export default function LoginPage() {
                   // Placeholder rengi beyaza (şeffaf beyaz) çekildi
                   className="w-full pl-12 pr-12 py-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-white placeholder:text-white/70 font-medium"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-4 text-slate-500 hover:text-blue-400 transition-colors"
-                >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
+               
               </div>
             </div>
 
@@ -119,7 +113,7 @@ export default function LoginPage() {
           </form>
 
           <p className="text-center text-sm text-slate-400 mt-8 font-medium">
-            Hesabınız yok mu? <Link href="/register" className="text-blue-400 font-bold hover:text-blue-300 transition-colors">Kayıt Ol</Link>
+            Hesabınız yoksa kayıt olabilirsiniz!! <Link href="/register" className="text-blue-400 font-bold hover:text-blue-300 transition-colors">Kayıt Ol</Link>
           </p>
         </div>
       </div>
