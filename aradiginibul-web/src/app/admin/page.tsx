@@ -486,7 +486,7 @@ export default function AdminPage() {
                                                 {editingProduct === p.id ? (
                                                     <input type="number" value={editForm.stock_quantity} onChange={e => setEditForm({ ...editForm, stock_quantity: parseInt(e.target.value) })} className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-xs text-white outline-none w-20" />
                                                 ) : (
-                                                    <span className={`text-xs font-black ${p.stock_quantity < 10 ? 'text-red-400' : 'text-green-400'}`}>{p.stock_quantity}</span>
+                                                    <span className={`text-xs font-black ${p.stock_quantity < 50 ? 'text-red-400' : 'text-green-400'}`}>{p.stock_quantity}</span>
                                                 )}
                                             </td>
                                             <td className="p-5 text-xs text-white/30 font-mono">{p.sku || '-'}</td>
