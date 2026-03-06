@@ -180,11 +180,11 @@ def seed_products():
                 ("Dış Dikiz Aynası Sağ", "Elektrikli ısıtmalı sağ dış ayna komple", 780, 20, "YP-KPR-007"),
                 ("Ön Cam", "Lamine güvenlik ön cam, orijinal ölçü", 3500, 5, "YP-KPR-008"),
             ]
-            for name, desc, price, _, sku in products:
-                random_stock = random.randint(19000, 40000)
-                db.execute(text(
-                    "INSERT INTO products (name, description, price, stock_quantity, sku) VALUES (:n, :d, :p, :s, :k)"
-                ), {"n": name, "d": desc, "p": price, "s": random_stock, "k": sku})
+        for name, desc, price, _, sku in products:
+            random_stock = random.randint(19000, 40000)
+            db.execute(text(
+                "INSERT INTO products (name, description, price, stock_quantity, sku) VALUES (:n, :d, :p, :s, :k)"
+            ), {"n": name, "d": desc, "p": price, "s": random_stock, "k": sku})
         db.commit()
         db.close()
     except Exception:
