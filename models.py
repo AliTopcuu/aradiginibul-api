@@ -29,6 +29,7 @@ class User(Base):
     orders = relationship("Order", back_populates="owner")
     reviews = relationship("Review", back_populates="owner")
     favorites = relationship("Product", secondary=user_favorites, back_populates="favorited_by")
+    saved_cards = relationship("SavedCard", back_populates="owner")
 
 # --- 2. ÜRÜN (PRODUCT) TABLOSU ---
 class Product(Base):
@@ -151,3 +152,18 @@ class Notification(Base):
 
     user = relationship("User")
     product = relationship("Product")
+
+# --- 10. KAYıTLı KARTLAR (SAVED CARDS) TABLOSU ---
+# Kullanıcıların ödeme sekmesinde kullanmak üzere kayıtlı kart bilgileri
+class SavedCard(Base):
+    __tablename__ = "saved_cards"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
+    card_holder = Column(String, nullable=False)  # Kartın sahibi adı
+    card_number = Column(String, nullable=False)  # Son 4 haneye şifreli olarak depolayabiliriz, şu an açık
+    card_expiry = Column(String, nullable=False)  # MM/YY formatında
+    is_default = Column(Boolean, default=False)   # Varsayılan kart mı?
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    owner = relationship("User", back_populates="saved_cards")

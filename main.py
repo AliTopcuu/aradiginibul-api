@@ -13,6 +13,7 @@ from routers.reviews_router import router as reviews_router
 from routers.analytics_router import router as analytics_router
 from routers.admin_router import router as admin_router
 from routers.favorites_router import router as favorites_router
+from routers.saved_cards_router import router as saved_cards_router
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -214,6 +215,7 @@ app.include_router(reviews_router)
 app.include_router(analytics_router)
 app.include_router(admin_router)
 app.include_router(favorites_router)
+app.include_router(saved_cards_router)
 
 @app.get("/")
 def read_root():

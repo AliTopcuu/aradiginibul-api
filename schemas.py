@@ -144,3 +144,20 @@ class NotificationResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+# --- 10. KAYıTLi KARTLAR (SAVED CARDS) ŞEMALARI ---
+class SavedCardBase(BaseModel):
+    card_holder: str
+    card_number: str  # 4 haneli son numara veya tamamı
+    card_expiry: str  # MM/YY formatında
+    is_default: bool = False
+
+class SavedCardCreate(SavedCardBase):
+    pass
+
+class SavedCardResponse(SavedCardBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
