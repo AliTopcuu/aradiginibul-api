@@ -88,9 +88,11 @@ class OrderResponse(BaseModel):
 class OrderItemCreate(BaseModel):
     product_id: int
     quantity: int
+    unit_price: Optional[float] = None  # Frontend'den gelen indirimli KDV'li fiyat
 
 class OrderCreate(BaseModel):
     items: List[OrderItemCreate] # Müşteri sadece ürün ID'si ve Miktar yollayacak
+    total_price: Optional[float] = None  # Frontend'den gelen toplam tutar (KDV+İndirim dahil)
 
 # --- 7. KULLANICI (USER) ŞEMALARI ---
 class UserBase(BaseModel):

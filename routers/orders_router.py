@@ -53,21 +53,25 @@ def create_order(
             db.rollback()
             raise HTTPException(status_code=400, detail=f"Stok yetersiz: {product.name}. Mevcut stok: {product.stock_quantity}")
         
-        # --- B2B HACİMSEL İSKONTO ALGORİTMASI ---
-        unit_price = product.price
-        applied_discount = 0.0
-        
-        # Ürünün indirim kurallarını kontrol et (Miktara göre uygulanabilir kuralları bul)
-        applicable_rules = [rule for rule in product.discount_rules if item.quantity >= rule.min_quantity]
-        if applicable_rules:
-            # En yüksek indirim yüzdesini veren kuralı seç
-            best_rule = max(applicable_rules, key=lambda r: r.discount_percentage)
-            applied_discount = (unit_price * best_rule.discount_percentage) / 100
-            unit_price -= applied_discount
+        # Frontend'den gelen unit_price'ı kullan (KDV ve indirim zaten uygulanmış)
+        # Eğer frontend'den fiyat gelmemişse eski sistemle hesapla
+        if item.unit_price is not None:
+            unit_price = item.unit_price
+        else:
+            # --- B2B HACİMSEL İSKONTO ALGORİTMASI (fallback) ---
+            unit_price = product.price * 1.2  # KDV ekle
+            applied_discount = 0.0
+            
+            # Ürünün indirim kurallarını kontrol et
+            applicable_rules = [rule for rule in product.discount_rules if item.quantity >= rule.min_quantity]
+            if applicable_rules:
+                # En yüksek indirim yüzdesini veren kuralı seç
+                best_rule = max(applicable_rules, key=lambda r: r.discount_percentage)
+                applied_discount = (unit_price * best_rule.discount_percentage) / 100
+                unit_price -= applied_discount
         
         # 3. Stoğu Düş ve Sipariş Kalemini Yarat
         product.stock_quantity -= item.quantity
-        
         order_item = models.OrderItem(
             order_id=new_order.id,
             product_id=product.id,
@@ -79,7 +83,11 @@ def create_order(
         total_amount += (unit_price * item.quantity)
     
     # 4. Toplam Tutarı Güncelle ve Tarihçeye (Timeline) İlk Durumu Ekle
-    new_order.total_price = total_amount
+    # Frontend'den toplam fiyat gelmişse onu kullan, yoksa hesaplanmış total_amount'ı kullan
+    if order_req.total_price is not None:
+        new_order.total_price = order_req.total_price
+    else:
+        new_order.total_price = total_amount
     
     history_entry = models.OrderHistory(
         order_id=new_order.id,

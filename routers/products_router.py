@@ -20,11 +20,11 @@ def create_product(
     db.refresh(new_product)
     return new_product
 
-# 2. TÜM ÜRÜNLERİ LİSTELEME (Herkes Görebilir)
+# 2. TÜM ÜRÜNLERİ LİSTELEME (Herkes Görebilir) - ID'ye göre sıralanmış
 @router.get("/", response_model=List[schemas.ProductResponse])
 def get_products(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    # Ürünleri getirirken, eğer varsa altındaki indirim kurallarını ve yorumları da otomatik getirir
-    products = db.query(models.Product).offset(skip).limit(limit).all()
+    # Ürünleri ID'ye göre sıralı şekilde getirirken, eğer varsa altındaki indirim kurallarını ve yorumları da otomatik getirir
+    products = db.query(models.Product).order_by(models.Product.id).offset(skip).limit(limit).all()
     return products
 
 # 3. TEKİL ÜRÜN DETAYI

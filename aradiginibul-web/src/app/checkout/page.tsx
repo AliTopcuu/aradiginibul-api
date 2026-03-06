@@ -37,7 +37,18 @@ export default function CheckoutPage() {
     };
     const calculateTotal = (id: string) => {
       const savedCart = JSON.parse(localStorage.getItem(`cartData_${id}`) || '[]');
-      const total = savedCart.reduce((sum: number, item: any) => sum + (item.price * item.quantity * 1.2), 0);
+      // Fiyat hesaplamaları (Cart sayfasıyla aynı)
+      const subTotal = savedCart.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+      const tax = subTotal * 0.20;
+      const subTotalWithTax = subTotal + tax;
+      // 50+ adet olan ürünlere %10 indirim
+      const discountAmount = savedCart.reduce((sum: number, item: any) => {
+        if (item.quantity >= 50) {
+          return sum + (item.price * item.quantity * 1.2 * 0.10);
+        }
+        return sum;
+      }, 0);
+      const total = subTotalWithTax - discountAmount;
       setCartTotal(total);
     };
     checkAuth();
@@ -69,13 +80,33 @@ export default function CheckoutPage() {
         alert("Sepetiniz boş!"); setIsProcessing(false); return;
       }
 
-      // Backend'e sipariş gönder
-      const orderItems = savedCart.map((item: any) => ({
-        product_id: item.id,
-        quantity: item.quantity
-      }));
+      // Fiyat hesapla (Cart sayfasıyla aynı)
+      const subTotal = savedCart.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+      const tax = subTotal * 0.20;
+      const subTotalWithTax = subTotal + tax;
+      const discountAmount = savedCart.reduce((sum: number, item: any) => {
+        if (item.quantity >= 50) {
+          return sum + (item.price * item.quantity * 1.2 * 0.10);
+        }
+        return sum;
+      }, 0);
+      const finalTotal = subTotalWithTax - discountAmount;
+      
+      // Backend'e sipariş gönder (indirimli fiyatlarla)
+      const orderItems = savedCart.map((item: any) => {
+        let unitPrice = item.price * 1.2; // KDV'li fiyat
+        // 50+ adet = %10 indirim
+        if (item.quantity >= 50) {
+          unitPrice = unitPrice * 0.9; // %10 indirim
+        }
+        return {
+          product_id: item.id,
+          quantity: item.quantity,
+          unit_price: unitPrice
+        };
+      });
 
-      const res = await api.post('/orders/', { items: orderItems });
+      const res = await api.post('/orders/', { items: orderItems, total_price: finalTotal });
       const orderId = res.data?.id || 'N/A';
 
       // Kartı kaydet (isteğe bağlı)
