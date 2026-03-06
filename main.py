@@ -12,6 +12,7 @@ from routers.orders_router import router as orders_router
 from routers.reviews_router import router as reviews_router
 from routers.analytics_router import router as analytics_router
 from routers.admin_router import router as admin_router
+from routers.favorites_router import router as favorites_router
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -47,21 +48,19 @@ def seed_admin():
 
 seed_admin()
 
-# Başlangıç ürünlerini veritabanına ekle (yoksa)
+# Başlangıç ürünlerini veritabanına ekle - Her startup'ta rastgele stock ile güncelle
 def seed_products():
     from database import SessionLocal
     import random
     try:
         db = SessionLocal()
-        existing = db.execute(text("SELECT COUNT(*) FROM products")).scalar()
-        if existing <= 10:
-            # Önce mevcut ürünleri temizle
-            db.execute(text("DELETE FROM products"))
-            db.commit()
+        # Her startup'ta ürünleri sil ve yeniden ekle (rastgele stock ile)
+        db.execute(text("DELETE FROM products"))
+        db.commit()
 
-            products = [
-                # === MOTOR PARÇALARI ===
-                ("Piston Seti (4 Adet)", "Yüksek performanslı döküm piston seti, standart ölçü", 1850, 45, "YP-MOT-001"),
+        products = [
+            # === MOTOR PARÇALARI ===
+            ("Piston Seti (4 Adet)", "Yüksek performanslı döküm piston seti, standart ölçü", 1850, 45, "YP-MOT-001"),
                 ("Silindir Kapak Contası", "Çelik takviyeli silindir kapak contası, orijinal uyumlu", 420, 120, "YP-MOT-002"),
                 ("Krank Mili", "CNC işlenmiş krank mili, dinamik balanslanmış", 3200, 18, "YP-MOT-003"),
                 ("Eksantrik Mili", "Yüksek karbonlu çelik eksantrik mili", 2750, 22, "YP-MOT-004"),
@@ -186,7 +185,7 @@ def seed_products():
                 db.execute(text(
                     "INSERT INTO products (name, description, price, stock_quantity, sku) VALUES (:n, :d, :p, :s, :k)"
                 ), {"n": name, "d": desc, "p": price, "s": random_stock, "k": sku})
-            db.commit()
+        db.commit()
         db.close()
     except Exception:
         pass
@@ -214,6 +213,7 @@ app.include_router(orders_router)
 app.include_router(reviews_router)
 app.include_router(analytics_router)
 app.include_router(admin_router)
+app.include_router(favorites_router)
 
 @app.get("/")
 def read_root():

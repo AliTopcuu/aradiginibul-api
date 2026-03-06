@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, LogOut, Loader2, Store, ShoppingCart, History, Plus, ChevronRight, CreditCard, X, Moon, Sun } from 'lucide-react';
+import { Search, LogOut, Loader2, Store, ShoppingCart, History, Plus, ChevronRight, CreditCard, X, Moon, Sun, Heart } from 'lucide-react';
 import api, { getUserEmailFromToken } from '@/lib/api';
 import Link from 'next/link';
 import { useDarkMode } from '@/lib/useDarkMode';
@@ -43,10 +43,13 @@ export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<any[]>([]);
+  const [favorites, setFavorites] = useState<any[]>([]);
   const [cart, setCart] = useState<any[]>([]);
   const [quantities, setQuantities] = useState<{ [key: number]: number }>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [showFavorites, setShowFavorites] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const theme = useDarkMode();
@@ -65,6 +68,9 @@ export default function DashboardPage() {
         const res = await api.get('/auth/me');
         setUser(res.data);
         loadCart(res.data.email);
+        // Favorileri yükle
+        const favRes = await api.get('/favorites/');
+        setFavorites(favRes.data || []);
       } catch (error) {
         const userId = tokenEmail || "guest";
         setUser({ first_name: "Bayi", last_name: "Üyesi", email: userId, company_name: "AUT Partner" });
@@ -124,6 +130,21 @@ export default function DashboardPage() {
     });
   };
 
+  const toggleFavorite = async (productId: number) => {
+    try {
+      await api.post(`/favorites/${productId}`);
+      // Favorileri tekrar yükle
+      const favRes = await api.get('/favorites/');
+      setFavorites(favRes.data || []);
+    } catch (error) {
+      console.error("Favori toggle hatası:", error);
+    }
+  };
+
+  const isFavorite = (productId: number) => {
+    return favorites.some(f => f.id === productId);
+  };
+
   // Arama: Ürün adı veya açıklamasında arama
   const getFilteredProducts = () => {
     if (!searchQuery.trim()) return [];
@@ -155,7 +176,12 @@ export default function DashboardPage() {
       <aside className={`w-64 ${theme.sidebar} backdrop-blur-3xl border-r hidden lg:flex flex-col p-6 sticky top-0 h-screen transition-colors duration-500`}>
         <Link href="/"><div className={`flex items-center gap-3 mb-10 px-2 text-white font-black uppercase italic text-xl cursor-pointer hover:${theme.accent} transition-colors`}>AradığınıBul</div></Link>
         <nav className="space-y-2 flex-1">
-          <SidebarItem icon={<Store size={18} />} label="Ürün Marketi" active theme={theme} />
+          <button onClick={() => setShowFavorites(false)} className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${!showFavorites ? `${theme.accentBgLight} ${theme.accentBorder}` : 'text-white/60 hover:text-white'}`}>
+            <Store size={18} /> <span className="text-xs font-black uppercase">Ürün Marketi</span>
+          </button>
+          <button onClick={() => setShowFavorites(true)} className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${showFavorites ? `${theme.accentBgLight} ${theme.accentBorder}` : 'text-white/60 hover:text-white'}`}>
+            <Heart size={18} /> <span className="text-xs font-black uppercase">Favorilerim ({favorites.length})</span>
+          </button>
           <Link href="/cart"><SidebarItem icon={<ShoppingCart size={18} />} label="Sepetim" count={totalItems > 0 ? totalItems.toString() : null} theme={theme} /></Link>
           <Link href="/saved-cards"><SidebarItem icon={<CreditCard size={18} />} label="Kayıtlı Kartlarım" theme={theme} /></Link>
           <Link href="/orders"><SidebarItem icon={<History size={18} />} label="Siparişlerim" theme={theme} /></Link>
@@ -232,16 +258,27 @@ export default function DashboardPage() {
         </header>
 
         <div className="p-10 max-w-7xl mx-auto pb-20">
-          <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter mb-10">Ürünler</h2>
+          <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter mb-10">{showFavorites ? "Favorilerim" : "Ürünler"}</h2>
 
-          {products.length === 0 ? (
+          {(showFavorites ? favorites : products).length === 0 ? (
             <div className={`${theme.card} backdrop-blur-2xl rounded-[2.5rem] border p-20 text-center`}>
-              <p className="text-white/20 italic text-sm">Henüz ürün bulunmuyor.</p>
+              <p className="text-white/20 italic text-sm">{showFavorites ? "Henüz favori ürün bulunmuyor." : "Henüz ürün bulunmuyor."}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
-              {products.map((p) => (
-                <div key={p.id} className={`${theme.card} backdrop-blur-2xl rounded-[2.5rem] border p-6 hover:${theme.accentBorder} transition-all flex flex-col shadow-xl group`}>
+              {(showFavorites ? favorites : products).map((p) => (
+                <div key={p.id} className={`${theme.card} backdrop-blur-2xl rounded-[2.5rem] border p-6 hover:${theme.accentBorder} transition-all flex flex-col shadow-xl group relative`}>
+                  {/* FAVORİ BUTONU */}
+                  <button
+                    onClick={() => toggleFavorite(p.id)}
+                    className="absolute top-4 right-4 z-10 p-2 rounded-xl bg-black/50 hover:bg-amber-500/20 transition-all"
+                  >
+                    <Heart
+                      size={18}
+                      className={isFavorite(p.id) ? "fill-red-500 text-red-500" : "text-white/40"}
+                    />
+                  </button>
+                  
                   <div className="aspect-square bg-white/5 rounded-2xl flex items-center justify-center overflow-hidden mb-6 group-hover:scale-105 transition-transform">
                     {p.image ? <img src={p.image} alt={p.name} className="w-full h-full object-cover" /> : <span className="text-5xl">📦</span>}
                   </div>

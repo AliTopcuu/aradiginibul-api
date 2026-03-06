@@ -112,3 +112,35 @@ class UserResponse(UserBase):
 
     class Config:
         from_attributes = True
+
+# --- 8. FİYAT İZLEME (PRICE TRACKING) ŞEMALARI ---
+class PriceTrackingResponse(BaseModel):
+    id: int
+    user_id: int
+    product_id: int
+    product: Optional[ProductResponse] = None  # Ürün bilgileri
+    initial_price: float
+    current_price: float
+    discount_percentage: float
+    price_drop: float  # İnitial - Current
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# --- 9. BİLDİRİM (NOTIFICATION) ŞEMALARI ---
+class NotificationResponse(BaseModel):
+    id: int
+    user_id: int
+    product_id: int
+    type: str  # "price_drop", "discount", "back_in_stock"
+    title: str
+    message: str
+    old_price: Optional[float] = None
+    new_price: Optional[float] = None
+    discount_percentage: Optional[float] = None
+    is_read: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

@@ -191,3 +191,54 @@ def delete_product(product_id: int, db: Session = Depends(get_db), admin: models
     db.delete(product)
     db.commit()
     return {"mesaj": "Ürün silindi."}
+
+# --- 5. BİLDİRİM YÖNETİMİ ---
+class SendNotificationRequest(BaseModel):
+    product_id: int
+    notification_type: str  # "price_drop", "discount", "back_in_stock"
+    title: str
+    message: str
+    old_price: Optional[float] = None
+    new_price: Optional[float] = None
+    discount_percentage: Optional[float] = None
+
+@router.post("/notifications/send")
+def send_price_notifications(
+    req: SendNotificationRequest,
+    db: Session = Depends(get_db),
+    admin: models.User = Depends(auth.get_admin_user)
+):
+    """Ürünü favoriye almış tüm kullanıcılara bildirim gönder"""
+    product = db.query(models.Product).filter(models.Product.id == req.product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Ürün bulunamadı.")
+    
+    # Favoride bu ürünü almış tüm kullanıcıları bul
+    users_with_favorite = db.query(models.User).join(
+        models.user_favorites
+    ).filter(
+        models.user_favorites.c.product_id == req.product_id
+    ).all()
+    
+    notification_count = 0
+    for user in users_with_favorite:
+        notification = models.Notification(
+            user_id=user.id,
+            product_id=req.product_id,
+            type=req.notification_type,
+            title=req.title,
+            message=req.message,
+            old_price=req.old_price,
+            new_price=req.new_price,
+            discount_percentage=req.discount_percentage
+        )
+        db.add(notification)
+        notification_count += 1
+    
+    db.commit()
+    return {
+        "mesaj": f"{notification_count} kullanıcıya bildirim gönderildi.",
+        "sent_count": notification_count,
+        "product_id": req.product_id,
+        "notification_type": req.notification_type
+    }

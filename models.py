@@ -113,3 +113,41 @@ class OrderHistory(Base):
     notes = Column(String) # Örn: "Kargo firmasına teslim edildi, Takip No: 12345"
 
     order = relationship("Order", back_populates="history")
+
+# --- 8. FİYAT İZLEME (PRICE TRACKING) TABLOSU ---
+# Kullanıcılar favorilerine aldıkları ürünlerin fiyat değişimini takip ediyor
+class PriceTracking(Base):
+    __tablename__ = "price_tracking"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
+    product_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"))
+    initial_price = Column(Float, nullable=False) # Takip başladığı zamanki fiyat
+    current_price = Column(Float, nullable=False)
+    discount_percentage = Column(Float, default=0.0) # Mevcut indirim yüzdesi
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_checked = Column(DateTime(timezone=True), server_default=func.now())
+    is_active = Column(Boolean, default=True) # Takip aktif mi?
+
+    user = relationship("User")
+    product = relationship("Product")
+
+# --- 9. BİLDİRİMLER (NOTIFICATIONS) TABLOSU ---
+# Fiyat düştüğünde veya indirim geldiğinde müşteriye bildirim
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
+    product_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"))
+    type = Column(String, nullable=False)  # "price_drop", "discount", "back_in_stock"
+    title = Column(String, nullable=False)
+    message = Column(String, nullable=False)
+    old_price = Column(Float, nullable=True)
+    new_price = Column(Float, nullable=True)
+    discount_percentage = Column(Float, nullable=True)
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")
+    product = relationship("Product")
