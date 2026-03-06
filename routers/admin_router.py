@@ -167,11 +167,18 @@ def update_product(product_id: int, product_data: ProductUpdate, db: Session = D
     product = db.query(models.Product).filter(models.Product.id == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Ürün bulunamadı.")
+    
+    # Eski fiyatı sakla (bildirim için)
+    old_price = product.price
+    price_changed = False
+    
     if product_data.name is not None:
         product.name = product_data.name
     if product_data.description is not None:
         product.description = product_data.description
     if product_data.price is not None:
+        if product_data.price != old_price:
+            price_changed = True
         product.price = product_data.price
     if product_data.stock_quantity is not None:
         product.stock_quantity = product_data.stock_quantity
@@ -179,8 +186,39 @@ def update_product(product_id: int, product_data: ProductUpdate, db: Session = D
         product.sku = product_data.sku
     if product_data.image_url is not None:
         product.image_url = product_data.image_url
+    
     db.commit()
     db.refresh(product)
+    
+    # Eğer fiyat değişmişse, favoride bu ürünü almış tüm kullanıcılara bildirim gönder
+    if price_changed:
+        # Favoride bu ürünü almış tüm kullanıcıları bul
+        users_with_favorite = db.query(models.User).join(
+            models.user_favorites
+        ).filter(
+            models.user_favorites.c.product_id == product_id
+        ).all()
+        
+        # Her kullanıcıya bildirim gönder
+        notification_type = "price_drop" if product_data.price < old_price else "price_increase"
+        
+        if notification_type == "price_drop":  # Sadece fiyat düşüşlerine bildirim gönder
+            discount_percentage = ((old_price - product_data.price) / old_price) * 100
+            for user in users_with_favorite:
+                notification = models.Notification(
+                    user_id=user.id,
+                    product_id=product_id,
+                    type="price_drop",
+                    title=f"{product.name} indirimdde!",
+                    message=f"Favori ürünün fiyatı %{discount_percentage:.0f} indirimle düştü.",
+                    old_price=old_price,
+                    new_price=product_data.price,
+                    discount_percentage=discount_percentage
+                )
+                db.add(notification)
+        
+        db.commit()
+    
     return {"mesaj": "Ürün güncellendi.", "urun": {"id": product.id, "name": product.name, "price": product.price, "stock_quantity": product.stock_quantity}}
 
 @router.delete("/products/{product_id}")
