@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, LogOut, Loader2, Store, ShoppingCart, History, Plus, ChevronRight, CreditCard, X, Moon, Sun, Heart } from 'lucide-react';
+import { Search, LogOut, Loader2, Store, ShoppingCart, History, Plus, ChevronRight, CreditCard, X, Moon, Sun, Heart, Bell } from 'lucide-react';
 import api, { getUserEmailFromToken } from '@/lib/api';
 import Link from 'next/link';
 import { useDarkMode } from '@/lib/useDarkMode';
@@ -44,13 +44,16 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<any[]>([]);
   const [favorites, setFavorites] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [cart, setCart] = useState<any[]>([]);
   const [quantities, setQuantities] = useState<{ [key: number]: number }>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
   const [showFavorites, setShowFavorites] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const notificationRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const theme = useDarkMode();
 
@@ -71,6 +74,12 @@ export default function DashboardPage() {
         // Favorileri yükle
         const favRes = await api.get('/favorites/');
         setFavorites(favRes.data || []);
+        // Bildirimleri yükle
+        const notifRes = await api.get('/favorites/notifications/list');
+        setNotifications(notifRes.data || []);
+        // Okunmamış bildirim sayısını hesapla
+        const unreadCount = (notifRes.data || []).filter((n: any) => !n.is_read).length;
+        setNotificationCount(unreadCount);
       } catch (error) {
         const userId = tokenEmail || "guest";
         setUser({ first_name: "Bayi", last_name: "Üyesi", email: userId, company_name: "AUT Partner" });
@@ -107,11 +116,14 @@ export default function DashboardPage() {
     fetchProducts();
   }, []);
 
-  // Arama dışına tıklayınca dropdown'ı kapat
+  // Arama ve bildirim dışına tıklayınca dropdown'ları kapat
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
         setSearchOpen(false);
+      }
+      if (notificationRef.current && !notificationRef.current.contains(e.target as Node)) {
+        setShowNotifications(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -242,8 +254,76 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* DARK MODE + KULLANICI BİLGİ + AVATAR */}
+          {/* DARK MODE + BİLDİRİMLER + KULLANICI BİLGİ + AVATAR */}
           <div className="flex items-center gap-4 text-right">
+            {/* BİLDİRİM ÇANI */}
+            <div ref={notificationRef} className="relative">
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+                title="Bildirimler"
+              >
+                <Bell size={16} className="text-white/60" />
+                {notificationCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center">
+                    {notificationCount > 9 ? '9+' : notificationCount}
+                  </span>
+                )}
+              </button>
+
+              {/* BİLDİRİM DROPDOWN */}
+              {showNotifications && (
+                <div className="absolute top-full right-0 mt-2 w-96 bg-black/90 backdrop-blur-3xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl max-h-96 overflow-y-auto z-[100]">
+                  {notifications.length === 0 ? (
+                    <div className="p-6 text-center text-white/20 text-xs italic">Bildirim bulunmuyor</div>
+                  ) : (
+                    <div className="divide-y divide-white/5">
+                      {notifications.map((notif) => (
+                        <button
+                          key={notif.id}
+                          onClick={async () => {
+                            // Bildirimi okundu olarak işaretle
+                            try {
+                              await api.put(`/favorites/notifications/${notif.id}/read`);
+                              // Listeyi güncelle
+                              const updated = notifications.map(n => 
+                                n.id === notif.id ? { ...n, is_read: true } : n
+                              );
+                              setNotifications(updated);
+                              setNotificationCount(updated.filter((n: any) => !n.is_read).length);
+                            } catch (error) {
+                              console.error("Bildirim okundu işaretleme hatası:", error);
+                            }
+                          }}
+                          className={`w-full text-left p-4 hover:bg-white/5 transition-colors ${notif.is_read ? 'opacity-60' : 'bg-amber-500/10'}`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <p className="text-xs font-black text-white uppercase tracking-widest">{notif.type === 'price_drop' ? '💰 Fiyat Düşüşü' : '🎉 İndirim'}</p>
+                              <p className="text-sm font-black text-white mt-1">{notif.title}</p>
+                              <p className="text-[11px] text-white/60 mt-1">{notif.message}</p>
+                              {notif.old_price && notif.new_price && (
+                                <div className="flex items-center gap-2 mt-2">
+                                  <span className="text-[10px] text-white/40 line-through">₺{notif.old_price.toLocaleString()}</span>
+                                  <span className="text-sm font-black text-amber-400">₺{notif.new_price.toLocaleString()}</span>
+                                  {notif.discount_percentage && (
+                                    <span className="text-[10px] font-black text-green-400">-%{notif.discount_percentage.toFixed(0)}</span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            {!notif.is_read && (
+                              <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0" />
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             <button onClick={theme.toggle} className="p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all" title={theme.isDark ? 'Açık Mod' : 'Koyu Mod'}>
               {theme.isDark ? <Sun size={16} className="text-yellow-400" /> : <Moon size={16} className="text-white/40" />}
             </button>
