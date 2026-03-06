@@ -187,7 +187,7 @@ export default function AdminPage() {
         } catch (err: any) { alert('Ürün eklenemedi: ' + getErrorMessage(err)); }
     };
 
-    if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]"><Loader2 className="animate-spin text-red-500 w-12 h-12" /></div>;
+    if (loading) return <div className={`min-h-screen flex items-center justify-center ${theme.bg}`}><Loader2 className="animate-spin text-red-500 w-12 h-12" /></div>;
 
     const tabs: { id: Tab; label: string; icon: any }[] = [
         { id: 'dashboard', label: 'Dashboard', icon: <BarChart3 size={18} /> },
@@ -199,9 +199,9 @@ export default function AdminPage() {
 
 
     return (
-        <div className="min-h-screen w-full flex bg-gradient-to-br from-[#0a0a0f] via-[#111118] to-[#0d0d14] text-slate-200 font-sans">
+        <div className={`min-h-screen w-full flex ${theme.bg} text-slate-200 font-sans`}>
             {/* SIDEBAR */}
-            <aside className="w-64 bg-[#0c0c12]/80 backdrop-blur-3xl border-r border-white/5 hidden lg:flex flex-col p-6 sticky top-0 h-screen">
+            <aside className={`w-64 ${theme.sidebar} backdrop-blur-3xl border-r hidden lg:flex flex-col p-6 sticky top-0 h-screen`}>
                 <div className="flex items-center gap-3 mb-2 px-2">
                     <Shield size={24} className="text-red-500" />
                     <span className="text-white font-black uppercase italic text-lg">Admin Panel</span>
