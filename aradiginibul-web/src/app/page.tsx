@@ -230,9 +230,17 @@ export default function DashboardPage() {
                     <button
                       key={p.id}
                       onClick={() => {
-                        addToCart(p);
+                        setShowFavorites(false);
                         setSearchQuery('');
                         setSearchOpen(false);
+                        setTimeout(() => {
+                          const el = document.getElementById(`product-${p.id}`);
+                          if (el) {
+                            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            el.classList.add('ring-2', 'ring-amber-500');
+                            setTimeout(() => el.classList.remove('ring-2', 'ring-amber-500'), 2000);
+                          }
+                        }, 100);
                       }}
                       className="w-full flex items-center gap-4 p-4 hover:bg-amber-500/10 transition-colors border-b border-white/5 last:border-0 text-left"
                     >
@@ -258,7 +266,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-4 text-right">
             {/* BİLDİRİM ÇANI */}
             <div ref={notificationRef} className="relative">
-              <button 
+              <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="relative p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
                 title="Bildirimler"
@@ -286,7 +294,7 @@ export default function DashboardPage() {
                             try {
                               await api.put(`/favorites/notifications/${notif.id}/read`);
                               // Listeyi güncelle
-                              const updated = notifications.map(n => 
+                              const updated = notifications.map(n =>
                                 n.id === notif.id ? { ...n, is_read: true } : n
                               );
                               setNotifications(updated);
@@ -347,7 +355,7 @@ export default function DashboardPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
               {(showFavorites ? favorites : products).map((p) => (
-                <div key={p.id} className={`${theme.card} backdrop-blur-2xl rounded-[2.5rem] border p-6 hover:${theme.accentBorder} transition-all flex flex-col shadow-xl group relative`}>
+                <div id={`product-${p.id}`} key={p.id} className={`${theme.card} backdrop-blur-2xl rounded-[2.5rem] border p-6 hover:${theme.accentBorder} transition-all flex flex-col shadow-xl group relative`}>
                   {/* FAVORİ BUTONU */}
                   <button
                     onClick={() => toggleFavorite(p.id)}
@@ -358,7 +366,7 @@ export default function DashboardPage() {
                       className={isFavorite(p.id) ? "fill-red-500 text-red-500" : "text-white/40"}
                     />
                   </button>
-                  
+
                   <div className="aspect-square bg-white/5 rounded-2xl flex items-center justify-center overflow-hidden mb-6 group-hover:scale-105 transition-transform">
                     {p.image ? <img src={p.image} alt={p.name} className="w-full h-full object-cover" /> : <span className="text-5xl">📦</span>}
                   </div>
@@ -382,8 +390,8 @@ export default function DashboardPage() {
           {/* ALT ÖZET TABLOSU */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-10 border-t border-white/10 mt-12">
             <div className={`${theme.card} p-8 rounded-[2.5rem] border shadow-lg transition-colors duration-500`}>
-              
-              
+
+
             </div>
             <div className={`bg-black/30 backdrop-blur-2xl p-10 rounded-[2.5rem] border ${theme.accentBorder} shadow-2xl flex flex-col justify-between transition-colors duration-500`}>
               <div>
