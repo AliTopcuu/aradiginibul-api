@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CreditCard, Trash2, Store, ShoppingCart, History, LogOut, Loader2, Moon, Sun } from 'lucide-react';
+import { CreditCard, Trash2, Store, ShoppingCart, History, LogOut, Loader2, Moon, Sun, Heart } from 'lucide-react';
 import Link from 'next/link';
 import api, { getUserEmailFromToken } from '@/lib/api';
 import { useDarkMode } from '@/lib/useDarkMode';
@@ -18,28 +18,29 @@ export default function SavedCardsPage() {
     const init = async () => {
       const token = localStorage.getItem('token');
       if (!token) { router.push("/login"); return; }
-      const tokenEmail = getUserEmailFromToken();
       try {
         const res = await api.get('/auth/me');
         setUser(res.data);
-        const userId = res.data.email;
-        const data = JSON.parse(localStorage.getItem(`savedCards_${userId}`) || '[]');
-        setCards(data);
+        // Kartları API'den yükle
+        const cardsRes = await api.get('/saved-cards/');
+        setCards(cardsRes.data || []);
       } catch (error) {
+        const tokenEmail = getUserEmailFromToken();
         const userId = tokenEmail || "guest";
         setUser({ first_name: "Bayi", last_name: "Üyesi", email: userId });
-        const data = JSON.parse(localStorage.getItem(`savedCards_${userId}`) || '[]');
-        setCards(data);
+        setCards([]);
       } finally { setLoading(false); }
     };
     init();
   }, [router]);
 
-  const deleteCard = (id: number) => {
-    const userId = user?.email || "guest";
-    const updated = cards.filter(c => c.id !== id);
-    setCards(updated);
-    localStorage.setItem(`savedCards_${userId}`, JSON.stringify(updated));
+  const deleteCard = async (id: number) => {
+    try {
+      await api.delete(`/saved-cards/${id}`);
+      setCards(cards.filter(c => c.id !== id));
+    } catch (error) {
+      alert("Kart silinirken bir hata oluştu.");
+    }
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#1a0005]"><Loader2 className="animate-spin text-amber-500 w-12 h-12" /></div>;
@@ -50,6 +51,7 @@ export default function SavedCardsPage() {
         <Link href="/"><div className="flex items-center gap-3 mb-10 px-2 text-white font-black uppercase italic text-xl cursor-pointer hover:text-amber-400 transition-colors">AradığınıBul</div></Link>
         <nav className="space-y-2 flex-1">
           <Link href="/"><SidebarItem icon={<Store size={18} />} label="Ürün Marketi" theme={theme} /></Link>
+          <Link href="/"><SidebarItem icon={<Heart size={18} />} label="Favorilerim" theme={theme} /></Link>
           <Link href="/cart"><SidebarItem icon={<ShoppingCart size={18} />} label="Sepetim" theme={theme} /></Link>
           <SidebarItem icon={<CreditCard size={18} />} label="Kayıtlı Kartlarım" active theme={theme} />
           <Link href="/orders"><SidebarItem icon={<History size={18} />} label="Siparişlerim" theme={theme} /></Link>
@@ -72,10 +74,10 @@ export default function SavedCardsPage() {
               <div key={c.id} className="bg-gradient-to-br from-white/10 to-transparent p-10 rounded-[2.5rem] border border-white/10 relative group">
                 <CreditCard className={theme.accent} size={32} />
                 <button onClick={() => deleteCard(c.id)} className="absolute top-10 right-10 text-red-500/30 hover:text-red-500"><Trash2 size={18} /></button>
-                <p className="text-xl font-mono tracking-widest text-white mb-4 mt-8">{c.number}</p>
+                <p className="text-xl font-mono tracking-widest text-white mb-4 mt-8">{c.card_number}</p>
                 <div className={`flex justify-between border-t border-white/5 pt-6 uppercase text-[8px] font-black ${theme.accent}`}>
-                  <div><span>Sahibi</span><p className="text-xs text-white/80">{c.holder}</p></div>
-                  <div><span>SKT</span><p className="text-xs text-white/80">{c.expiry}</p></div>
+                  <div><span>Sahibi</span><p className="text-xs text-white/80">{c.card_holder}</p></div>
+                  <div><span>SKT</span><p className="text-xs text-white/80">{c.card_expiry}</p></div>
                 </div>
               </div>
             ))

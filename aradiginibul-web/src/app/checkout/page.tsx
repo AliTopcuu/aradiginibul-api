@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, Loader2, CreditCard, Lock, Calendar, User, Hash, ShieldCheck, Moon, Sun, ChevronDown } from 'lucide-react';
+import { CheckCircle2, Loader2, CreditCard, Lock, Calendar, User, Hash, ShieldCheck, Moon, Sun, ChevronDown, X } from 'lucide-react';
 import Link from 'next/link';
 import api, { getUserEmailFromToken } from '@/lib/api';
 import { useDarkMode } from '@/lib/useDarkMode';
@@ -20,8 +20,11 @@ export default function CheckoutPage() {
   const [savedCards, setSavedCards] = useState<any[]>([]);
   const [selectedCardId, setSelectedCardId] = useState<number | null>(null);
   const [showCardSelector, setShowCardSelector] = useState(false);
+  const cvcInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const theme = useDarkMode();
+
+  const isUsingSavedCard = selectedCardId !== null;
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -70,23 +73,40 @@ export default function CheckoutPage() {
     });
     setShowCardSelector(false);
     setSaveCard(false);  // Zaten kaydedilmiş kart seçilmiş
+    // CVC alanına otomatik focus at
+    setTimeout(() => cvcInputRef.current?.focus(), 100);
+  };
+
+  const handleClearSavedCard = () => {
+    setSelectedCardId(null);
+    setCardData({ holder: '', number: '', expiry: '', cvc: '' });
+    setSaveCard(false);
   };
 
   const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isUsingSavedCard) return;
     let v = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '').substring(0, 16);
     const parts = v.match(/.{1,4}/g);
     setCardData({ ...cardData, number: parts ? parts.join(' ') : v });
   };
 
   const handleExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isUsingSavedCard) return;
     let v = e.target.value.replace(/[^0-9]/gi, '');
     if (v.length >= 2) v = v.substring(0, 2) + '/' + v.substring(2, 4);
     setCardData({ ...cardData, expiry: v.substring(0, 5) });
   };
 
   const handlePayment = async () => {
-    if (cardData.number.length < 19 || cardData.expiry.length < 5 || cardData.cvc.length < 3) {
-      alert("Lütfen bilgileri eksiksiz doldurun."); return;
+    // Kayıtlı kart seçilmişse sadece CVC kontrolü yap
+    if (isUsingSavedCard) {
+      if (cardData.cvc.length < 3) {
+        alert("Lütfen CVC kodunu girin."); return;
+      }
+    } else {
+      if (cardData.number.length < 19 || cardData.expiry.length < 5 || cardData.cvc.length < 3) {
+        alert("Lütfen bilgileri eksiksiz doldurun."); return;
+      }
     }
     setIsProcessing(true);
     const userId = user?.email || "guest";
@@ -109,7 +129,7 @@ export default function CheckoutPage() {
         return sum;
       }, 0);
       const finalTotal = subTotalWithTax - discountAmount;
-      
+
       // Backend'e sipariş gönder (indirimli fiyatlarla)
       const orderItems = savedCart.map((item: any) => {
         let unitPrice = item.price * 1.2; // KDV'li fiyat
@@ -199,13 +219,35 @@ export default function CheckoutPage() {
               )}
             </div>
           )}
+
+          {/* Kayıtlı kart seçiliyken bilgi bandı */}
+          {isUsingSavedCard && (
+            <div className="flex items-center justify-between bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl">
+              <div className="flex items-center gap-2">
+                <CreditCard size={14} className="text-amber-400" />
+                <span className="text-[9px] font-black uppercase text-amber-400">Kayıtlı kart ile ödeme — sadece CVC girin</span>
+              </div>
+              <button onClick={handleClearSavedCard} className="text-white/40 hover:text-white transition-all" title="Yeni Kart ile Öde">
+                <X size={14} />
+              </button>
+            </div>
+          )}
+
           {/* KART BİLGİLERİ FORMU */}
-          <div className="relative"><User className="absolute left-4 top-4 text-white/20" size={18} /><input type="text" placeholder="KART SAHİBİ" value={cardData.holder} onChange={(e) => setCardData({ ...cardData, holder: e.target.value })} className="w-full bg-white/5 p-4 pl-12 rounded-xl border border-white/10 outline-none focus:border-amber-500 uppercase font-black text-xs" /></div>
-          <div className="relative"><CreditCard className="absolute left-4 top-4 text-white/20" size={18} /><input type="text" value={cardData.number} placeholder="KART NUMARASI" onChange={handleCardNumberChange} className="w-full bg-white/5 p-4 pl-12 rounded-xl border border-white/10 outline-none focus:border-amber-500 font-mono text-sm" /></div>
+          <div className="relative"><User className={`absolute left-4 top-4 ${isUsingSavedCard ? 'text-white/10' : 'text-white/20'}`} size={18} /><input type="text" placeholder="KART SAHİBİ" value={cardData.holder} onChange={(e) => !isUsingSavedCard && setCardData({ ...cardData, holder: e.target.value })} disabled={isUsingSavedCard} className={`w-full bg-white/5 p-4 pl-12 rounded-xl border border-white/10 outline-none focus:border-amber-500 uppercase font-black text-xs ${isUsingSavedCard ? 'opacity-50 cursor-not-allowed' : ''}`} /></div>
+          <div className="relative"><CreditCard className={`absolute left-4 top-4 ${isUsingSavedCard ? 'text-white/10' : 'text-white/20'}`} size={18} /><input type="text" value={cardData.number} placeholder="KART NUMARASI" onChange={handleCardNumberChange} disabled={isUsingSavedCard} className={`w-full bg-white/5 p-4 pl-12 rounded-xl border border-white/10 outline-none focus:border-amber-500 font-mono text-sm ${isUsingSavedCard ? 'opacity-50 cursor-not-allowed' : ''}`} /></div>
           <div className="grid grid-cols-2 gap-4">
-            <div className="relative"><Calendar className="absolute left-4 top-4 text-white/20" size={18} /><input type="text" value={cardData.expiry} placeholder="AA/YY" onChange={handleExpiryChange} className="w-full bg-white/5 p-4 pl-12 rounded-xl border border-white/10 outline-none focus:border-amber-500 font-mono text-xs" /></div>
-            <div className="relative"><Lock className="absolute left-4 top-4 text-white/20" size={18} /><input type="password" placeholder="CVC" maxLength={3} onChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, '').substring(0, 3); setCardData({ ...cardData, cvc: v }); e.target.value = v; }} className="w-full bg-white/5 p-4 pl-12 rounded-xl border border-white/10 outline-none focus:border-amber-500 font-mono text-xs" /></div>
+            <div className="relative"><Calendar className={`absolute left-4 top-4 ${isUsingSavedCard ? 'text-white/10' : 'text-white/20'}`} size={18} /><input type="text" value={cardData.expiry} placeholder="AA/YY" onChange={handleExpiryChange} disabled={isUsingSavedCard} className={`w-full bg-white/5 p-4 pl-12 rounded-xl border border-white/10 outline-none focus:border-amber-500 font-mono text-xs ${isUsingSavedCard ? 'opacity-50 cursor-not-allowed' : ''}`} /></div>
+            <div className="relative"><Lock className="absolute left-4 top-4 text-white/20" size={18} /><input ref={cvcInputRef} type="password" placeholder="CVC" maxLength={3} onChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, '').substring(0, 3); setCardData({ ...cardData, cvc: v }); e.target.value = v; }} className={`w-full bg-white/5 p-4 pl-12 rounded-xl border outline-none focus:border-amber-500 font-mono text-xs ${isUsingSavedCard ? 'border-amber-500/50 ring-1 ring-amber-500/20' : 'border-white/10'}`} /></div>
           </div>
+
+          {/* Yeni Kart ile Öde butonu (kayıtlı kart seçiliyken) */}
+          {isUsingSavedCard && (
+            <button onClick={handleClearSavedCard} className="w-full text-center py-2 text-[9px] font-black uppercase text-white/30 hover:text-white/60 transition-all border border-white/5 rounded-xl hover:border-white/20">
+              Yeni Kart ile Öde
+            </button>
+          )}
+
           {!selectedCardId && <div className="flex items-center gap-3 py-2 cursor-pointer" onClick={() => setSaveCard(!saveCard)}><div className={`w-4 h-4 border rounded ${saveCard ? theme.accentBg : 'border-white/20'}`} /> <span className="text-[9px] font-black uppercase text-white/40">Kartı Kaydet</span></div>}
           <button onClick={handlePayment} disabled={isProcessing} className={`w-full ${theme.accentBg} text-black py-4 rounded-full font-black uppercase text-xs shadow-xl flex items-center justify-center gap-2`}>{isProcessing ? <Loader2 className="animate-spin" /> : <><ShieldCheck size={16} /> Ödemeyi Tamamla</>}</button>
         </div>

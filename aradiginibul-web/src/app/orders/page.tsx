@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { History, Store, ShoppingCart, CreditCard, LogOut, Loader2, ChevronDown, Moon, Sun } from 'lucide-react';
+import { History, Store, ShoppingCart, CreditCard, LogOut, Loader2, ChevronDown, Moon, Sun, Heart } from 'lucide-react';
 import Link from 'next/link';
 import api, { getUserEmailFromToken } from '@/lib/api';
 import { useDarkMode } from '@/lib/useDarkMode';
@@ -57,6 +57,7 @@ export default function OrdersPage() {
         <Link href="/"><div className="flex items-center gap-3 mb-10 px-2 text-white font-black uppercase italic text-xl cursor-pointer hover:text-amber-400 transition-colors">AradığınıBul</div></Link>
         <nav className="space-y-2 flex-1">
           <Link href="/"><SidebarItem icon={<Store size={18} />} label="Ürün Marketi" theme={theme} /></Link>
+          <Link href="/"><SidebarItem icon={<Heart size={18} />} label="Favorilerim" theme={theme} /></Link>
           <Link href="/cart"><SidebarItem icon={<ShoppingCart size={18} />} label="Sepetim" theme={theme} /></Link>
           <Link href="/saved-cards"><SidebarItem icon={<CreditCard size={18} />} label="Kayıtlı Kartlarım" theme={theme} /></Link>
           <SidebarItem icon={<History size={18} />} label="Siparişlerim" active theme={theme} />
