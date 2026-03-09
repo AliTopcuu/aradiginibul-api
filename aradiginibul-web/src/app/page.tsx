@@ -281,11 +281,31 @@ export default function DashboardPage() {
 
               {/* BİLDİRİM DROPDOWN */}
               {showNotifications && (
-                <div className="absolute top-full right-0 mt-2 w-96 bg-black/90 backdrop-blur-3xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl max-h-96 overflow-y-auto z-[100]">
-                  {notifications.length === 0 ? (
-                    <div className="p-6 text-center text-white/20 text-xs italic">Bildirim bulunmuyor</div>
-                  ) : (
-                    <div className="divide-y divide-white/5">
+                <div className="absolute top-full right-0 mt-2 w-96 bg-black/90 backdrop-blur-3xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl z-[100]">
+                  {notifications.length > 0 && (
+                    <div className="sticky top-0 bg-black/90 border-b border-white/10 p-3 flex items-center justify-between">
+                      <span className="text-xs font-black text-white/60 uppercase tracking-widest">Bildirimler ({notifications.length})</span>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await api.delete('/favorites/notifications/clear-all');
+                            setNotifications([]);
+                            setNotificationCount(0);
+                          } catch (error) {
+                            console.error("Bildirimleri temizleme hatası:", error);
+                          }
+                        }}
+                        className="text-[10px] font-black text-red-400 hover:text-red-300 uppercase tracking-widest hover:underline transition-colors"
+                      >
+                        Temizle
+                      </button>
+                    </div>
+                  )}
+                  <div className={`${notifications.length === 0 ? '' : 'max-h-80 overflow-y-auto'}`}>
+                    {notifications.length === 0 ? (
+                      <div className="p-6 text-center text-white/20 text-xs italic">Bildirim bulunmuyor</div>
+                    ) : (
+                      <div className="divide-y divide-white/5">
                       {notifications.map((notif) => (
                         <button
                           key={notif.id}
@@ -326,8 +346,9 @@ export default function DashboardPage() {
                           </div>
                         </button>
                       ))}
-                    </div>
-                  )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

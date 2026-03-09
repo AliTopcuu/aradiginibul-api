@@ -110,3 +110,12 @@ def get_unread_notification_count(db: Session = Depends(get_db), current_user: m
         models.Notification.is_read == False
     ).scalar()
     return {"unread_count": count}
+
+# --- 8. TÜMEL BİLDİRİMLERİ SİL ---
+@router.delete("/notifications/clear-all")
+def delete_all_notifications(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    db.query(models.Notification).filter(
+        models.Notification.user_id == current_user.id
+    ).delete()
+    db.commit()
+    return {"mesaj": "Tüm bildirimler silindi."}
