@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Users, ShoppingCart, Package, BarChart3, Trash2, LogOut, Loader2, Moon, Sun, RefreshCw, Plus, Save, ChevronDown, Shield, Upload, ImageIcon } from 'lucide-react';
 import api from '@/lib/api';
 import { useDarkMode } from '@/lib/useDarkMode';
+import ConfirmModal from '@/app/components/ConfirmModal';
 
 type Tab = 'dashboard' | 'users' | 'orders' | 'products';
 
@@ -24,6 +25,12 @@ export default function AdminPage() {
     const editFileInputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
     const theme = useDarkMode();
+
+    // confirmation modal state
+    const [confirmState, setConfirmState] = useState<{
+        message: string;
+        action: () => void;
+    } | null>(null);
 
     // Resmi sıkıştır ve base64'e çevir
     const compressImage = (file: File): Promise<string> => {
@@ -111,12 +118,16 @@ export default function AdminPage() {
         if (tab === 'products') loadProducts();
     };
 
-    const deleteUser = async (id: number) => {
-        if (!confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')) return;
-        try {
-            await api.delete(`/admin/users/${id}`);
-            setUsers(users.filter(u => u.id !== id));
-        } catch (err: any) { alert(getErrorMessage(err)); }
+    const deleteUser = (id: number) => {
+        setConfirmState({
+            message: 'Emin misiniz? Bu işlem geri alınamaz ve Audit loglarına kaydedilecektir.',
+            action: async () => {
+                try {
+                    await api.delete(`/admin/users/${id}`);
+                    setUsers(users.filter(u => u.id !== id));
+                } catch (err: any) { alert(getErrorMessage(err)); }
+            }
+        });
     };
 
     const updateUserRole = async (id: number, role: string) => {
@@ -159,12 +170,16 @@ export default function AdminPage() {
         } catch (err: any) { alert(getErrorMessage(err)); }
     };
 
-    const deleteProduct = async (id: number) => {
-        if (!confirm('Bu ürünü silmek istediğinize emin misiniz?')) return;
-        try {
-            await api.delete(`/admin/products/${id}`);
-            setProducts(products.filter(p => p.id !== id));
-        } catch (err: any) { alert(getErrorMessage(err)); }
+    const deleteProduct = (id: number) => {
+        setConfirmState({
+            message: 'Emin misiniz? Bu işlem geri alınamaz ve Audit loglarına kaydedilecektir.',
+            action: async () => {
+                try {
+                    await api.delete(`/admin/products/${id}`);
+                    setProducts(products.filter(p => p.id !== id));
+                } catch (err: any) { alert(getErrorMessage(err)); }
+            }
+        });
     };
 
     const getErrorMessage = (err: any) => {
@@ -188,6 +203,18 @@ export default function AdminPage() {
     };
 
     if (loading) return <div className={`min-h-screen flex items-center justify-center ${theme.bg}`}><Loader2 className="animate-spin text-red-500 w-12 h-12" /></div>;
+
+    // show confirm modal when confirmState is set
+    const handleConfirm = () => {
+        if (confirmState) {
+            confirmState.action();
+            setConfirmState(null);
+        }
+    };
+
+    const handleCancel = () => {
+        setConfirmState(null);
+    };
 
     const tabs: { id: Tab; label: string; icon: any }[] = [
         { id: 'dashboard', label: 'Dashboard', icon: <BarChart3 size={18} /> },
@@ -512,6 +539,14 @@ export default function AdminPage() {
                     </div>
                 )}
             </main>
+
+            {/* confirmation modal overlay */}
+            <ConfirmModal
+                visible={!!confirmState}
+                message={confirmState?.message || ''}
+                onConfirm={handleConfirm}
+                onCancel={handleCancel}
+            />
         </div>
     );
 }
